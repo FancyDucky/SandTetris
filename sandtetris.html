@@ -1,0 +1,1710 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Sand Tetris — Clumps of Sand</title>
+<link rel="stylesheet" href="styles.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+</head>
+<body>
+<header id="header">
+  <div class="brand" aria-label="Sand Tetris">
+    <span class="brand-sand">Sand</span>
+    <span class="brand-tetris">
+      <span class="l1">T</span><span class="l2">E</span><span class="l3">T</span><span class="l4">R</span><span class="l5">I</span><span class="l6">S</span>
+    </span>
+  </div>
+  
+  </header>
+<div id="container">
+  <div class="sidebar">
+    <div class="preview">
+      <div class="label">Hold</div>
+      <canvas id="holdCanvas" width="100" height="100"></canvas>
+    </div>
+    <div class="preview">
+      <div class="label">Next</div>
+      <canvas id="nextCanvas" width="100" height="100"></canvas>
+    </div>
+  </div>
+  <div class="stage"><canvas id="c"></canvas></div>
+  <div id="touchControls" class="controls" aria-label="Touch Controls">
+    <button class="ctrl" id="btn-left" aria-label="Left">←</button>
+    <button class="ctrl" id="btn-right" aria-label="Right">→</button>
+    <button class="ctrl" id="btn-rotate" aria-label="Rotate">⟳</button>
+    <button class="ctrl" id="btn-down" aria-label="Soft Drop">↓</button>
+    <button class="ctrl" id="btn-hard" aria-label="Hard Drop">⤓</button>
+    <button class="ctrl" id="btn-hold" aria-label="Hold">⧉</button>
+  </div>
+  <div class="ui">
+    <div class="instructions">
+      <div class="instructions-title">Controls</div>
+      <div class="instructions-grid">
+        <div class="col">
+          <div class="label">Keyboard</div>
+          <ul>
+            <li>Move: <span class="k">A / D</span> or <span class="k">← →</span></li>
+            <li>Rotate: <span class="k">W</span> or <span class="k">↑</span></li>
+            <li>Soft drop: <span class="k">S</span> or <span class="k">↓</span></li>
+            <li>Hard drop: <span class="k">Space</span></li>
+            <li>Hold: <span class="k">C</span> or <span class="k">Shift</span></li>
+            <li>Pause: <span class="k">P</span></li>
+            <li>Restart: <span class="k">R</span></li>
+          </ul>
+        </div>
+        <div class="col">
+          <div class="label">Gamepad</div>
+          <ul>
+            <li>Move: <span class="k">D‑pad</span>/<span class="k">Left Stick</span></li>
+            <li>Rotate: <span class="k">A</span> or <span class="k">D‑pad ↑</span></li>
+            <li>Hard drop: <span class="k">Y</span>/<span class="k">B</span>/<span class="k">RB</span></li>
+            <li>Hold: <span class="k">X</span>/<span class="k">LB</span></li>
+            <li>Pause: <span class="k">Start</span>/<span class="k">Options</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <p class="subtitle">When a piece lands, it becomes sand — connect a same-color path from left to right to clear it.</p>
+    <div id="xp" class="xp">
+      <div class="xp-fill" id="xpFill" style="width:0%"></div>
+      <div class="xp-label" id="xpLabel">Level 1 — 0 / 100 XP</div>
+    </div>
+    <p>
+      <button id="restart" tabindex="-1" class="no-focus">Restart</button>
+      <button id="pauseBtn" class="no-focus" tabindex="-1">Pause</button>
+    </p>
+     <p id="rates"></p>
+  </div>
+  <div id="overlay" class="overlay hidden">
+    <div class="panel">
+      <h2>Game Over</h2>
+      <p>Tap or press Restart to play again.</p>
+      <button id="btn-restart" class="primary no-focus" tabindex="-1">Restart</button>
+    </div>
+  </div>
+  <div id="upgradeOverlay" class="overlay hidden">
+    <div class="panel upgrades">
+      <h2>Choose an Upgrade</h2>
+      <div class="upgrade-grid">
+        <div class="upgrade-card" data-upgrade="rainbow">
+          <h3>Rainbow Pieces</h3>
+          <p>Occasionally spawn a rainbow piece. Adopts color on landing. Slightly larger for better reach.</p>
+          <small id="rateRainbow">Spawn chance: —</small>
+          <button class="primary choose-upgrade">Select</button>
+        </div>
+        <div class="upgrade-card" data-upgrade="void">
+          <h3>Void Blocks</h3>
+          <p>Spawn rare 2×2 void blocks. Use quick drop to activate and absorb a 5×5 sand area.</p>
+          <small id="rateVoid">Spawn chance: —</small>
+          <button class="primary choose-upgrade">Select</button>
+        </div>
+        <div class="upgrade-card" data-upgrade="larger">
+          <h3>Larger Blocks</h3>
+          <p>Chance for blocks to spawn with extra cubes at their endpoints (e.g., I becomes 6×1).</p>
+          <small id="rateLarger">Spawn chance: —</small>
+          <button class="primary choose-upgrade">Select</button>
+        </div>
+        <div class="upgrade-card" data-upgrade="drip">
+          <h3>Dripping Blocks</h3>
+          <p>Blocks may drip paint, coloring sand directly beneath their footprint all the way down.</p>
+          <small id="rateDrip">Spawn chance: —</small>
+          <button class="primary choose-upgrade">Select</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="pauseOverlay" class="overlay hidden">
+    <div class="panel">
+      <h2>Paused</h2>
+      <p>Press P (keyboard) or Start/A (gamepad) to resume.</p>
+      <button id="pauseResume" class="primary no-focus" tabindex="-1">Resume</button>
+    </div>
+  </div>
+  <div id="introOverlay" class="overlay">
+    <div class="panel">
+      <h2>Sand Tetris</h2>
+      <p>Stack falling pieces. When they land, they turn to sand. Connect a same‑color path from left to right to clear it.</p>
+      <div class="quick-controls">
+        <div class="qc-card">
+          <div class="qc-title">Keyboard</div>
+          <ul class="qc-list">
+            <li class="qc-row"><span class="qc-action">Move</span><span class="keys"><span class="key">A</span><span class="key">D</span><span class="key alt">←</span><span class="key alt">→</span></span></li>
+            <li class="qc-row"><span class="qc-action">Rotate</span><span class="keys"><span class="key">W</span><span class="key alt">↑</span></span></li>
+            <li class="qc-row"><span class="qc-action">Soft drop</span><span class="keys"><span class="key">S</span><span class="key alt">↓</span></span></li>
+            <li class="qc-row"><span class="qc-action">Hard drop / Void</span><span class="keys"><span class="key">Space</span></span></li>
+            <li class="qc-row"><span class="qc-action">Hold</span><span class="keys"><span class="key">C</span><span class="key alt">Shift</span></span></li>
+            <li class="qc-row"><span class="qc-action">Pause</span><span class="keys"><span class="key">P</span></span></li>
+          </ul>
+        </div>
+        <div class="qc-card">
+          <div class="qc-title">Gamepad</div>
+          <ul class="qc-list">
+            <li class="qc-row"><span class="qc-action">Move</span><span class="keys"><span class="key">D‑pad</span><span class="key">Stick</span></span></li>
+            <li class="qc-row"><span class="qc-action">Rotate</span><span class="keys"><span class="key">A</span><span class="key alt">D‑pad ↑</span></span></li>
+            <li class="qc-row"><span class="qc-action">Hard drop / Void</span><span class="keys"><span class="key">Y</span><span class="key">B</span><span class="key">RB</span></span></li>
+            <li class="qc-row"><span class="qc-action">Hold</span><span class="keys"><span class="key">X</span><span class="key">LB</span></span></li>
+            <li class="qc-row"><span class="qc-action">Pause</span><span class="keys"><span class="key">Start</span></span></li>
+          </ul>
+        </div>
+      </div>
+      <button id="introStart" class="primary no-focus" tabindex="-1">Start</button>
+    </div>
+  </div>
+  <div id="unlockOverlay" class="overlay hidden">
+    <div class="panel">
+      <h2>New Color Unlocked!</h2>
+      <canvas id="unlockCanvas" width="120" height="120"></canvas>
+      <p>This color will now appear in the next level.</p>
+      <button id="unlockContinue" class="primary">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // Config
+  const COLS = 20; // widened by 5 squares on each side (10 total)
+  const ROWS = 28; // increased height by 8 rows
+  const CELL = 20; // pixels per cell
+  canvas.width = COLS * CELL;
+  canvas.height = ROWS * CELL + 2; // 2px taller
+
+  // Grid: null or {r,g,b,color}
+  let grid = [];
+  function resetGrid(){
+    grid = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+  }
+  resetGrid();
+
+  // Tetris tetromino shapes (4x4 arrays)
+  const SHAPES = [
+    // I
+    [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+    // O
+    [[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+    // T
+    [[0,1,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+    // L
+    [[0,0,1,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+    // J
+    [[1,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+    // S
+    [[0,1,1,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]],
+    // Z
+    [[1,1,0,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+  ];
+
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  let fullPalette = ['#CC79A7', '#FF3B30', '#009E73', '#F0E442', '#8A2BE2']; // mutable palette
+  function paletteForLevel(level){
+    if(level <= 1) return fullPalette.slice(0,3);
+    if(level === 2) return fullPalette.slice(0,4);
+    return fullPalette.slice(0,5);
+  }
+  let currentLevel = 1;
+  let currentPalette = paletteForLevel(currentLevel);
+  let RAINBOW_CHANCE_BASE = 0.0; // base chance; unlocked via upgrade
+  let RAINBOW_CHANCE_UP = 0.0;   // additive from upgrades
+  function rainbowChance(){ return RAINBOW_CHANCE_BASE + RAINBOW_CHANCE_UP; }
+  function randColor(){
+    return currentPalette[Math.floor(Math.random()*currentPalette.length)];
+  }
+
+  let piece = null;
+  let gameOver = false;
+  let nextPieceShape = null;
+  let holdPieceShape = null;
+  let canHoldThisTurn = true;
+  let score = 0; // deprecated; kept for internal use if needed
+  let xp = 0;
+  let xpToLevel = 100;
+  let isDraining = false;
+  let rainbowSizeBonus = 0;
+  let VOID_CHANCE = 0;
+  let LARGER_CHANCE = 0;
+  let DRIP_CHANCE = 0;
+  let hasRainbow = false, hasVoid = false, hasLarger = false, hasDrip = false;
+  let forceNextVoid = false;
+  let forceNextLarger = false;
+  let forceNextDrip = false;
+  function generatePiece(){
+    // Choose shape and possibly rainbow color flag
+    const shape = JSON.parse(JSON.stringify(randChoice(SHAPES)));
+    const isRainbow = Math.random() < rainbowChance();
+    const color = isRainbow ? 'RAINBOW' : randColor();
+    // Void blocks: chance or forced
+    if(forceNextVoid || Math.random() < VOID_CHANCE){
+      forceNextVoid = false;
+      const voidShape = [[1,1,1,0],[1,1,1,0],[1,1,1,0],[0,0,0,0]];
+      return { shape: voidShape, color: 'VOID' };
+    }
+    // Larger blocks modifier: either forced or random chance
+    const larger = forceNextLarger || (Math.random() < LARGER_CHANCE);
+    forceNextLarger = false;
+    // Drip blocks modifier: either forced or random chance
+    const drip = forceNextDrip || (Math.random() < DRIP_CHANCE);
+    forceNextDrip = false;
+    return { shape, color, larger, drip };
+  }
+
+  function spawnPiece(){
+    if(!nextPieceShape){
+      const np = generatePiece();
+      nextPieceShape = np;
+    }
+    const current = nextPieceShape;
+    nextPieceShape = generatePiece();
+    piece = {
+      mat: current.shape,
+      x: Math.floor((COLS - 4)/2),
+      y: -1,
+      color: current.color,
+      locked: false,
+      larger: !!current.larger,
+      drip: !!current.drip
+    };
+    if(!canPlace(piece.mat, piece.x, piece.y)){
+      gameOver = true;
+      showOverlay(true);
+    }
+    canHoldThisTurn = true;
+    renderPreviews();
+  }
+  spawnPiece();
+
+  function rotateMat(m){
+    const n = m.length;
+    const out = Array.from({length:n}, () => Array(n).fill(0));
+    for(let r=0;r<n;r++){
+      for(let c=0;c<n;c++){
+        out[c][n-1-r] = m[r][c];
+      }
+    }
+    return out;
+  }
+  function isTwoByTwo(mat){
+    let minR=4, minC=4, maxR=-1, maxC=-1;
+    for(let r=0;r<4;r++){
+      for(let c=0;c<4;c++){
+        if(mat[r][c]){ minR=Math.min(minR,r); minC=Math.min(minC,c); maxR=Math.max(maxR,r); maxC=Math.max(maxC,c); }
+      }
+    }
+    if(maxR < 0) return false;
+    const h = maxR - minR + 1;
+    const w = maxC - minC + 1;
+    if(h !== 2 || w !== 2) return false;
+    for(let r=minR;r<=maxR;r++){
+      for(let c=minC;c<=maxC;c++){
+        if(!mat[r][c]) return false;
+      }
+    }
+    return true;
+  }
+
+  // For larger pieces: compute extension cells one step beyond each endpoint cell
+  // Endpoint = occupied cell with exactly one 4-neighbor among occupied
+  function computeExtensions(mat){
+    const occ = new Set();
+    for(let r=0;r<4;r++){
+      for(let c=0;c<4;c++){
+        if(mat[r][c]) occ.add(r+","+c);
+      }
+    }
+    const ext = new Set();
+    const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+    for(let r=0;r<4;r++){
+      for(let c=0;c<4;c++){
+        if(!mat[r][c]) continue;
+        let neighbors = [];
+        for(const [dr,dc] of dirs){
+          const nr = r+dr, nc = c+dc;
+          if(nr>=0 && nr<4 && nc>=0 && nc<4 && mat[nr][nc]){
+            neighbors.push([nr,nc]);
+          }
+        }
+        if(neighbors.length === 1){
+          const [nr,nc] = neighbors[0];
+          const vr = r - nr, vc = c - nc; // outward direction
+          const er = r + vr, ec = c + vc;
+          const k = er+","+ec;
+          if(!occ.has(k)){
+            ext.add(k);
+          }
+        }
+      }
+    }
+    // return as array of [r,c]
+    return Array.from(ext).map(s=>s.split(',').map(Number));
+  }
+
+  // Wall-kick rotation: try offsets when rotating near walls or blocks
+  // Improved wall-kick (basic SRS-like offsets around current position)
+  function tryRotate(){
+    if(!piece || piece.color === 'VOID') return false;
+    if(isTwoByTwo(piece.mat)) return false; // default 2x2 cannot rotate
+    const rotated = rotateMat(piece.mat);
+    // Try in-place, then horizontal shifts, then small vertical nudge
+    const kicks = [
+      [0,0],[1,0],[-1,0],[2,0],[-2,0],[0,-1],[1,-1],[-1,-1],[0,1]
+    ];
+    for(const [dx,dy] of kicks){
+      const nx = piece.x + dx;
+      const ny = piece.y + dy;
+      if(canPlace(rotated, nx, ny)){
+        piece.mat = rotated;
+        piece.x = nx;
+        piece.y = ny;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function canPlace(mat, x, y){
+    for(let r=0;r<4;r++){
+      for(let c=0;c<4;c++){
+        if(mat[r][c]){
+          const gx = x + c;
+          const gy = y + r;
+          if(gx < 0 || gx >= COLS) return false;
+          if(gy >= ROWS) return false;
+          if(gy >= 0 && grid[gy][gx]) return false;
+        }
+      }
+    }
+    // If current piece is larger, include extension cells in collision
+    if(piece && piece.larger){
+      const ext = computeExtensions(mat);
+      for(const [er,ec] of ext){
+        const gx = x + ec;
+        const gy = y + er;
+        if(gx < 0 || gx >= COLS) return false;
+        if(gy >= ROWS) return false;
+        if(gy >= 0 && grid[gy][gx]) return false;
+      }
+    }
+    return true;
+  }
+
+  // Hold mechanics
+  function holdAction(){
+    if(gameOver || !canHoldThisTurn) return;
+    if(!holdPieceShape){
+      holdPieceShape = { shape: JSON.parse(JSON.stringify(piece.mat)), color: piece.color, larger: !!piece.larger, drip: !!piece.drip };
+      spawnPiece();
+    } else {
+      const swap = { shape: JSON.parse(JSON.stringify(piece.mat)), color: piece.color, larger: !!piece.larger, drip: !!piece.drip };
+      piece.mat = JSON.parse(JSON.stringify(holdPieceShape.shape));
+      piece.color = holdPieceShape.color;
+      piece.larger = !!holdPieceShape.larger;
+      piece.drip = !!holdPieceShape.drip;
+      piece.x = Math.floor((COLS - 4)/2);
+      piece.y = -1;
+      holdPieceShape = swap;
+      if(!canPlace(piece.mat, piece.x, piece.y)){
+        // if swapped piece cannot spawn, end game
+        gameOver = true;
+        showOverlay(true);
+      }
+    }
+    canHoldThisTurn = false;
+    renderPreviews();
+  }
+
+  function renderPreviews(){
+    const nextCtx = document.getElementById('nextCanvas').getContext('2d');
+    const holdCtx = document.getElementById('holdCanvas').getContext('2d');
+    const w = nextCtx.canvas.width, h = nextCtx.canvas.height;
+    nextCtx.clearRect(0,0,w,h);
+    holdCtx.clearRect(0,0,w,h);
+    if(nextPieceShape){
+      drawMiniCentered(nextCtx, nextPieceShape.shape, nextPieceShape.color, !!nextPieceShape.larger, !!nextPieceShape.drip);
+    }
+    if(holdPieceShape){
+      drawMiniCentered(holdCtx, holdPieceShape.shape, holdPieceShape.color, !!holdPieceShape.larger, !!holdPieceShape.drip);
+    }
+    // animate previews if rainbow exists
+    if((nextPieceShape && (nextPieceShape.color === 'RAINBOW' || nextPieceShape.drip)) || (holdPieceShape && (holdPieceShape.color === 'RAINBOW' || holdPieceShape.drip))){
+      requestAnimationFrame(renderPreviews);
+    }
+  }
+
+  function drawMiniCentered(ctx2, mat, color, isLarger, isDrip){
+    // Compute tight bounding box of occupied cells
+    let minR=4, minC=4, maxR=-1, maxC=-1;
+    for(let r=0;r<4;r++) for(let c=0;c<4;c++) if(mat[r][c]){ minR=Math.min(minR,r); minC=Math.min(minC,c); maxR=Math.max(maxR,r); maxC=Math.max(maxC,c); }
+    if(maxR < 0){ return; }
+    const boxW = (maxC-minC+1);
+    const boxH = (maxR-minR+1);
+    let cellSize = Math.floor(Math.min((ctx2.canvas.width-20)/boxW, (ctx2.canvas.height-20)/boxH));
+    const totalW = cellSize * boxW;
+    const totalH = cellSize * boxH;
+    const startX = Math.floor((ctx2.canvas.width - totalW)/2);
+    const startY = Math.floor((ctx2.canvas.height - totalH)/2);
+    for(let r=0;r<4;r++){
+      for(let c=0;c<4;c++){
+        if(!mat[r][c]) continue;
+        let x = startX + (c - minC) * cellSize;
+        let y = startY + (r - minR) * cellSize;
+        // no halo; actual extra blocks will be drawn below
+        let drawSize = cellSize;
+        let px = x, py = y;
+        if(color === 'RAINBOW'){
+          const t = performance.now()*RAINBOW_SPEED + (r*13 + c*7);
+          const hue = (t % 360);
+          ctx2.fillStyle = `hsl(${hue}, 90%, 60%)`;
+        } else {
+          ctx2.fillStyle = color;
+        }
+        ctx2.fillRect(px, py, drawSize, drawSize);
+        ctx2.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx2.lineWidth = 1;
+        ctx2.strokeRect(px+0.5, py+0.5, drawSize-1, drawSize-1);
+      }
+    }
+    // draw extension cells for preview if larger
+    if(isLarger){
+      const ext = computeExtensions(mat);
+      for(const [er,ec] of ext){
+        const x = startX + (ec - minC) * cellSize;
+        const y = startY + (er - minR) * cellSize;
+        if(color === 'RAINBOW'){
+          const t = performance.now()*RAINBOW_SPEED + (er*13 + ec*7);
+          const hue = (t % 360);
+          ctx2.fillStyle = `hsl(${hue}, 90%, 60%)`;
+        } else {
+          ctx2.fillStyle = color;
+        }
+        ctx2.fillRect(x, y, cellSize, cellSize);
+        ctx2.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx2.lineWidth = 1;
+        ctx2.strokeRect(x+0.5, y+0.5, cellSize-1, cellSize-1);
+      }
+    }
+    // dripping effect in preview (stronger for Next)
+    if(isDrip){
+      // Determine bottom-most occupied row per column within the 4x4 mat
+      const bottomByCol = new Map();
+      for(let c=minC;c<=maxC;c++){
+        for(let r=maxR;r>=minR;r--){
+          if(mat[r][c]){ bottomByCol.set(c, r); break; }
+        }
+      }
+      const t = performance.now();
+      bottomByCol.forEach((br, bc)=>{
+        const baseX = startX + (bc - minC) * cellSize + cellSize/2;
+        const baseY = startY + (br - minR + 1) * cellSize;
+        const drops = ctx2.canvas === document.getElementById('nextCanvas') ? 6 : 4;
+        for(let i=0;i<drops;i++){
+          const phase = (i*150 + (bc*97)) % 600;
+          const tt = ((t + phase) % 900) / 900; // 0..1
+          const dx = (Math.random()*0.3 - 0.15) * cellSize;
+          const dy = tt * Math.min(cellSize*1.0, ctx2.canvas.height - baseY - 6);
+          ctx2.globalAlpha = 0.8 * (1 - tt);
+          ctx2.fillStyle = color === 'RAINBOW' ? '#fff' : color;
+          ctx2.beginPath();
+          ctx2.arc(baseX + dx, baseY + dy, Math.max(1, Math.floor(cellSize*0.10)), 0, Math.PI*2);
+          ctx2.fill();
+          ctx2.globalAlpha = 1;
+        }
+      });
+    }
+  }
+
+  function settlePieceToGrid(){
+    const {mat, x, y, color} = piece;
+    // If rainbow piece, determine landing color by sampling the first supporting cell it touches beneath
+    let effectiveColor = color;
+    if(color === 'RAINBOW'){
+      // Check cells directly below piece footprint to pick a color to adopt; fallback to random
+      let adopt = null;
+      for(let r=3;r>=0;r--){
+        for(let c=0;c<4;c++){
+          if(!mat[r][c]) continue;
+          const gx = x + c;
+          const gy = y + r + 1;
+          if(gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS){
+            const below = grid[gy][gx];
+            if(below && below !== 'RAINBOW'){ adopt = below; break; }
+          }
+        }
+        if(adopt) break;
+      }
+      effectiveColor = adopt || randColor();
+    }
+    // place base cells
+    for(let r=0;r<4;r++){
+      for(let c=0;c<4;c++){
+        if(mat[r][c]){
+          const gx = x + c;
+          const gy = y + r;
+          if(gy >= 0 && gx >= 0 && gx < COLS && gy < ROWS){
+            grid[gy][gx] = effectiveColor;
+          }
+        }
+      }
+    }
+    // place extension cells if larger
+    if(piece.larger){
+      for(const [er,ec] of computeExtensions(mat)){
+        const gx = x + ec;
+        const gy = y + er;
+        if(gy >= 0 && gx >= 0 && gx < COLS && gy < ROWS){
+          grid[gy][gx] = effectiveColor;
+        }
+      }
+    }
+    // Drip effect: enqueue slower paint-down animation beneath the piece footprint
+    if(piece.drip){
+      const footprint = new Set();
+      for(let r=0;r<4;r++){
+        for(let c=0;c<4;c++){
+          if(mat[r][c]){
+            footprint.add((x+c)+","+(y+r));
+          }
+        }
+      }
+      if(piece.larger){
+        for(const [er,ec] of computeExtensions(mat)){
+          footprint.add((x+ec)+","+(y+er));
+        }
+      }
+      // Collect unique columns covered by footprint
+      const cols = new Set();
+      const bottomRowByCol = new Map();
+      for(const key of footprint){
+        const [gxStr, gyStr] = key.split(',');
+        const gx = parseInt(gxStr,10);
+        const gy = parseInt(gyStr,10);
+        if(gx>=0 && gx<COLS){
+          const prev = bottomRowByCol.get(gx);
+          bottomRowByCol.set(gx, prev == null ? gy : Math.max(prev, gy));
+        }
+      }
+      for(const [gx, bottomGy] of bottomRowByCol.entries()){
+        const startRow = Math.max(0, bottomGy+1);
+        dripPaints.push({ col: gx, startRow, color: effectiveColor, progress: 0, lastPaintedRow: startRow-1 });
+        // initial splash particles at the bottom of footprint
+        for(let i=0;i<10;i++){
+          const px = gx*CELL + CELL/2 + (Math.random()*8-4);
+          const py = (bottomGy+1)*CELL + Math.random()*6;
+          const vy = 180 + Math.random()*160;
+          particles.push({ kind: 'drip', hueColor: effectiveColor, x: px, y: py, vx: (Math.random()*40-20), vy, life: 460+Math.random()*260, age: 0, size: 2+Math.random()*2 });
+        }
+      }
+    }
+    // no score on settle; scoring is based on pixels cleared
+    if(delaySpawnOnceMs > 0){
+      spawnDelayMs = delaySpawnOnceMs;
+      delaySpawnOnceMs = 0;
+      piece = null; // temporarily no active piece to showcase sand settling
+    } else {
+      spawnPiece();
+    }
+  }
+
+  let sandParity = 0;
+  function sandStep(){
+    sandParity ^= 1; // alternate preference each step to reduce jitter
+    for(let r=ROWS-1;r>=0;r--){
+      for(let c=0;c<COLS;c++){
+        const color = grid[r][c];
+        if(!color) continue;
+        const downEmpty = (r+1 < ROWS && !grid[r+1][c]);
+        if(downEmpty){
+          grid[r+1][c] = color;
+          grid[r][c] = null;
+          continue;
+        }
+        const canDL = (r+1 < ROWS && c-1 >= 0 && !grid[r+1][c-1]);
+        const canDR = (r+1 < ROWS && c+1 < COLS && !grid[r+1][c+1]);
+        if(canDL && canDR){
+          const preferLeft = ((r + c + sandParity) % 2 === 0);
+          if(preferLeft){
+            grid[r+1][c-1] = color;
+            grid[r][c] = null;
+          } else {
+            grid[r+1][c+1] = color;
+            grid[r][c] = null;
+          }
+          continue;
+        }
+        if(canDL){
+          grid[r+1][c-1] = color;
+          grid[r][c] = null;
+          continue;
+        }
+        if(canDR){
+          grid[r+1][c+1] = color;
+          grid[r][c] = null;
+          continue;
+        }
+        // else: blocked on all three positions, stay put
+      }
+    }
+  }
+
+  // Remove any connected sand cluster that touches both the left and right walls
+  function clearSideToSideBridges(){
+    const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+    let anyCleared = false;
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const startColor = grid[r][c];
+        if(!startColor || visited[r][c]) continue;
+        const stack = [[r,c]];
+        visited[r][c] = true;
+        const cells = [];
+        let touchesLeft = false;
+        let touchesRight = false;
+        while(stack.length){
+          const [cr, cc] = stack.pop();
+          cells.push([cr, cc]);
+          if(cc === 0) touchesLeft = true;
+          if(cc === COLS - 1) touchesRight = true;
+          const neighbors = [
+            [cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1],
+            [cr-1,cc-1],[cr-1,cc+1],[cr+1,cc-1],[cr+1,cc+1]
+          ];
+          for(const [nr, nc] of neighbors){
+            if(
+              nr>=0 && nr<ROWS && nc>=0 && nc<COLS &&
+              !visited[nr][nc] && grid[nr][nc] === startColor
+            ){
+              visited[nr][nc] = true;
+              stack.push([nr, nc]);
+            }
+          }
+        }
+        if(touchesLeft && touchesRight){
+          // spawn magic dust particles and pause sand
+          spawnDustForCells(cells);
+          sandPauseMs = Math.max(sandPauseMs, DUST_MS);
+          for(const [cr, cc] of cells){ grid[cr][cc] = null; }
+          // scoring strictly by pixels removed
+          const gained = cells.length;
+          addXp(gained);
+          // floating score text
+          spawnFloatingScore(cells, gained);
+          anyCleared = true;
+        }
+      }
+    }
+    return anyCleared;
+  }
+
+  const floatScores = [];
+  function spawnFloatingScore(cells, gained){
+    // anchor around the centroid of cleared cells
+    let sx = 0, sy = 0;
+    for(const [r,c] of cells){ sx += c*CELL + CELL/2; sy += r*CELL + CELL/2; }
+    sx /= cells.length; sy /= cells.length;
+    const size = Math.max(16, Math.min(56, 12 + Math.sqrt(gained)*4));
+    // longer life for slower, more visible animation
+    floatScores.push({ x: sx, y: sy, text: `+${gained}` , age: 0, life: 1500, size });
+  }
+
+  // XP/Level helpers
+  function addXp(amount){
+    xp += amount;
+    if(xp >= xpToLevel){
+      xp -= xpToLevel;
+      levelUp();
+    }
+    updateXpBar();
+  }
+
+  function levelUp(){
+    currentLevel++;
+    currentPalette = paletteForLevel(currentLevel);
+    // pause and show upgrades immediately; keep board intact
+    showUpgrades(true);
+    updateXpBar();
+    updateColorPickerLock();
+  }
+
+  function showUpgrades(show){
+    const ov = document.getElementById('upgradeOverlay');
+    if(show){
+      // Randomly show 2 upgrade cards
+      const cards = Array.from(document.querySelectorAll('#upgradeOverlay .upgrade-card'));
+      cards.forEach(c=>c.classList.add('hidden'));
+      // pick 2 distinct random
+      const picks = [];
+      while(picks.length < 2 && cards.length){
+        const idx = Math.floor(Math.random() * cards.length);
+        picks.push(cards.splice(idx,1)[0]);
+      }
+      picks.forEach(card=>card.classList.remove('hidden'));
+      // Focus first visible for keyboard/gamepad nav
+      setTimeout(()=>{
+        const first = document.querySelector('#upgradeOverlay .upgrade-card:not(.hidden) .choose-upgrade');
+        first && first.focus();
+      }, 0);
+      ov.classList.remove('hidden');
+    } else {
+      ov.classList.add('hidden');
+    }
+  }
+
+  function spawnDustForCells(cells){
+    for(const [r,c] of cells){
+      const baseX = c*CELL + CELL/2;
+      const baseY = r*CELL + CELL/2;
+      const count = 4 + Math.floor(Math.random()*4);
+      for(let i=0;i<count;i++){
+        const angle = Math.random()*Math.PI*2;
+        const speed = 40 + Math.random()*80;
+        particles.push({
+          x: baseX, y: baseY,
+          vx: Math.cos(angle)*speed,
+          vy: Math.sin(angle)*speed - 40,
+          life: 450 + Math.random()*350,
+          age: 0,
+          size: 2 + Math.random()*2,
+          hue: 45 + Math.random()*30
+        });
+      }
+    }
+  }
+
+  let lastTime = 0;
+  let dropTimer = 0;
+  let dropInterval = 600;
+  let sandAccumulator = 0;
+  const SAND_STEP_MS = 50;
+  const RAINBOW_SPEED = 0.2; // hue degrees per ms (~200°/s)
+  const DUST_MS = 650; // pause sand and play dust particles
+  let sandPauseMs = 0;
+  const particles = [];
+  const dripPaints = [];
+  let dripEmitAccumulator = 0;
+  // Unlock overlay confetti state
+  let unlockConfetti = [];
+  let unlockConfettiAnim = null;
+  let currentUnlockColor = null;
+  let spawnDelayMs = 0; // delay before spawning next piece (used for hard drop visual)
+  let delaySpawnOnceMs = 0; // armed by hard drop
+  const breakTiles = [];
+
+  function update(delta){
+    // Input handling with hold-to-move (DAS/ARR)
+    handleKeyboardHold(delta);
+    handleGamepadInput(delta);
+
+    if(gameOver) return;
+    // Pause during overlays: block game updates while upgrade or unlock overlay is open
+    const upgradesVisible = !document.getElementById('upgradeOverlay').classList.contains('hidden');
+    const unlockVisible = !document.getElementById('unlockOverlay').classList.contains('hidden');
+    const pauseVisible = !document.getElementById('pauseOverlay').classList.contains('hidden');
+    const introVisible = !document.getElementById('introOverlay').classList.contains('hidden');
+    if(upgradesVisible || unlockVisible || pauseVisible || introVisible) return;
+    // Handle sand pause during dust animation
+    if(sandPauseMs > 0){
+      sandPauseMs -= delta;
+    }
+    if(spawnDelayMs > 0){
+      spawnDelayMs -= delta;
+      if(spawnDelayMs <= 0 && !piece){
+        spawnPiece();
+      }
+    }
+    dropTimer += delta;
+    if(piece && piece.color !== 'VOID' && dropTimer > dropInterval){
+      tryMovePiece(piece.x, piece.y + 1);
+      dropTimer = 0;
+    }
+    sandAccumulator += delta;
+    while(sandAccumulator >= SAND_STEP_MS){
+      if(sandPauseMs <= 0){
+        sandStep();
+      }
+      sandAccumulator -= SAND_STEP_MS;
+    }
+    // Progressive drip painting animation
+    if(dripPaints.length){
+      const perMs = 0.0016; // rows/ms per column; smaller = slower (sped up a bit)
+      for(let i=dripPaints.length-1;i>=0;i--){
+        const d = dripPaints[i];
+        d.progress += perMs * delta;
+        const maxRow = Math.floor(d.startRow + d.progress * (ROWS - d.startRow));
+        for(let gy = d.lastPaintedRow+1; gy <= maxRow && gy < ROWS; gy++){
+          if(grid[gy][d.col]){
+            grid[gy][d.col] = d.color;
+          }
+        }
+        d.lastPaintedRow = Math.min(maxRow, ROWS-1);
+        if(d.lastPaintedRow >= ROWS-1){ dripPaints.splice(i,1); }
+      }
+    }
+    // Emit drip particles under active drip piece intermittently
+    if(piece && piece.drip && piece.color !== 'VOID'){
+      dripEmitAccumulator += delta;
+      const emitEveryMs = 120;
+      while(dripEmitAccumulator >= emitEveryMs){
+        dripEmitAccumulator -= emitEveryMs;
+        // emit small colored droplets from bottom-most occupied cells
+        for(let c=0;c<4;c++){
+          for(let r=3;r>=0;r--){
+            if(piece.mat[r][c]){
+              const gx = piece.x + c;
+              const gy = piece.y + r;
+              if(gy >= 0){
+                const px = gx*CELL + CELL/2 + (Math.random()*6-3);
+                const py = (gy+1)*CELL + Math.random()*4;
+                const vy = 160 + Math.random()*120;
+                particles.push({ kind: 'drip', hueColor: piece.color, x: px, y: py, vx: (Math.random()*30-15), vy, life: 420+Math.random()*200, age: 0, size: 1.8+Math.random()*1.8 });
+              }
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      dripEmitAccumulator = 0;
+    }
+    // After sand falls, clear any clusters bridging left-to-right. Repeat until none remain.
+    let cleared;
+    do {
+      cleared = clearSideToSideBridges();
+    } while (cleared);
+  }
+
+  function tryMovePiece(nx, ny){
+    if(canPlace(piece.mat, nx, ny)){
+      piece.x = nx;
+      piece.y = ny;
+      return true;
+    } else {
+      if(ny > piece.y){
+        settlePieceToGrid();
+      }
+      return false;
+    }
+  }
+
+  function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Ghost drop shadow for current piece
+    if(piece && !gameOver && piece.color !== 'VOID'){
+      let gy = piece.y;
+      while(canPlace(piece.mat, piece.x, gy + 1)) gy++;
+      if(gy >= piece.y){
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        for(let r=0;r<4;r++){
+          for(let c=0;c<4;c++){
+             if(piece.mat[r][c]){
+              const gx = piece.x + c;
+              const gy2 = gy + r;
+              if(gy2 >= 0){
+                ctx.fillStyle = piece.color === 'RAINBOW' ? 'rgba(255,255,255,0.7)' : piece.color;
+                ctx.fillRect(gx*CELL, gy2*CELL, CELL, CELL);
+              }
+            }
+          }
+        }
+        // draw extensions for ghost if larger
+        if(piece.larger){
+          const ext = computeExtensions(piece.mat);
+          for(const [er,ec] of ext){
+            const gx = piece.x + ec;
+            const gy2 = gy + er;
+            if(gy2 >= 0){
+              ctx.fillStyle = piece.color === 'RAINBOW' ? 'rgba(255,255,255,0.7)' : piece.color;
+              ctx.fillRect(gx*CELL, gy2*CELL, CELL, CELL);
+            }
+          }
+        }
+        ctx.restore();
+      }
+    }
+     for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const color = grid[r][c];
+         if(color){
+          if(color === 'RAINBOW'){
+            const t = performance.now() * RAINBOW_SPEED + (r*13 + c*7);
+            const hue = (t % 360);
+            ctx.fillStyle = `hsl(${hue}, 90%, 60%)`;
+           } else if(color === 'VOID'){
+             ctx.fillStyle = '#000';
+          } else {
+            ctx.fillStyle = color;
+          }
+          ctx.fillRect(c*CELL, r*CELL, CELL, CELL);
+          ctx.fillStyle = 'rgba(0,0,0,0.12)';
+          ctx.fillRect(c*CELL, r*CELL+CELL*0.6, CELL, CELL*0.4);
+          // Outline for better contrast separation
+          ctx.lineWidth = 1;
+           ctx.strokeStyle = color === 'VOID' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.6)';
+           ctx.strokeRect(c*CELL+0.5, r*CELL+0.5, CELL-1, CELL-1);
+        }
+      }
+    }
+    if(piece){
+      ctx.globalAlpha = 0.95;
+      for(let r=0;r<4;r++){
+        for(let c=0;c<4;c++){
+           if(piece.mat[r][c]){
+            const gx = piece.x + c;
+            const gy = piece.y + r;
+            if(gy >= 0){
+               if(piece.color === 'RAINBOW'){
+                const t = performance.now() * RAINBOW_SPEED + (gy*13 + gx*7);
+                const hue = (t % 360);
+                ctx.fillStyle = `hsl(${hue}, 90%, 60%)`;
+               } else if(piece.color === 'VOID'){
+                 ctx.fillStyle = '#000';
+              } else {
+                ctx.fillStyle = piece.color;
+              }
+               const cx = gx*CELL, cy = gy*CELL;
+               ctx.fillRect(cx, cy, CELL, CELL);
+               if(piece.color !== 'VOID'){
+                 ctx.fillStyle = 'rgba(0,0,0,0.08)';
+                 ctx.fillRect(cx, cy+CELL*0.6, CELL, CELL*0.4);
+               }
+              // Outline for active piece
+              ctx.lineWidth = 1;
+               ctx.strokeStyle = piece.color === 'VOID' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.6)';
+               ctx.strokeRect(cx+0.5, cy+0.5, CELL-1, CELL-1);
+               if(piece.color === 'VOID' && Math.random() < 0.2){
+                 const angle = Math.random()*Math.PI*2;
+                 const speed = 80 + Math.random()*80;
+                 particles.push({ kind: 'void', x: gx*CELL+CELL/2, y: gy*CELL+CELL/2, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, life: 400, age: 0, size: 2.2 });
+               }
+            }
+          }
+        }
+      }
+      // draw extensions for active larger piece
+      if(piece && piece.larger){
+        for(const [er,ec] of computeExtensions(piece.mat)){
+          const gx = piece.x + ec;
+          const gy = piece.y + er;
+          if(gy >= 0){
+            if(piece.color === 'RAINBOW'){
+              const t = performance.now() * RAINBOW_SPEED + (gy*13 + gx*7);
+              const hue = (t % 360);
+              ctx.fillStyle = `hsl(${hue}, 90%, 60%)`;
+            } else if(piece.color === 'VOID'){
+              ctx.fillStyle = '#000';
+            } else {
+              ctx.fillStyle = piece.color;
+            }
+            const cx = gx*CELL, cy = gy*CELL;
+            ctx.fillRect(cx, cy, CELL, CELL);
+            if(piece.color !== 'VOID'){
+              ctx.fillStyle = 'rgba(0,0,0,0.08)';
+              ctx.fillRect(cx, cy+CELL*0.6, CELL, CELL*0.4);
+            }
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = piece.color === 'VOID' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.6)';
+            ctx.strokeRect(cx+0.5, cy+0.5, CELL-1, CELL-1);
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for(let c=0;c<=COLS;c++){
+      ctx.beginPath();
+      ctx.moveTo(c*CELL,0); ctx.lineTo(c*CELL,ROWS*CELL); ctx.stroke();
+    }
+    for(let r=0;r<=ROWS;r++){
+      ctx.beginPath();
+      ctx.moveTo(0,r*CELL); ctx.lineTo(COLS*CELL,r*CELL); ctx.stroke();
+    }
+
+    // Void preview: pulsing shadow over 5x5 target while moving the void block
+    if(piece && piece.color === 'VOID'){
+      const cx = Math.max(0, Math.min(COLS-1, piece.x + 1));
+      const cy = Math.max(0, Math.min(ROWS-1, piece.y + 1));
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.008);
+      for(let dr=-2; dr<=2; dr++){
+        for(let dc=-2; dc<=2; dc++){
+          const rr = cy + dr, cc = cx + dc;
+          if(rr<0 || rr>=ROWS || cc<0 || cc>=COLS) continue;
+          // soft fill
+          ctx.fillStyle = `rgba(0,0,0,${0.10 + 0.16*pulse})`;
+          ctx.fillRect(cc*CELL, rr*CELL, CELL, CELL);
+          // outline on the outer ring
+          if(Math.abs(dr)===2 || Math.abs(dc)===2){
+            ctx.strokeStyle = `rgba(255,255,255,${0.06 + 0.08*pulse})`;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cc*CELL+1, rr*CELL+1, CELL-2, CELL-2);
+          }
+        }
+      }
+    }
+
+    // Render particles on top
+    const dt = 16; // approx per frame for movement
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.age += dt;
+      if(p.age >= p.life){ particles.splice(i,1); continue; }
+      const t = p.age / p.life;
+      p.x += p.vx * (dt/1000);
+      p.y += p.vy * (dt/1000);
+      if(p.kind !== 'void'){ p.vy += 160 * (dt/1000); }
+      ctx.globalAlpha = 1 - t;
+      if(p.kind === 'void'){
+        ctx.fillStyle = 'rgba(0,0,0,0.9)';
+      } else if(p.kind === 'drip'){
+        // drip particles take the color of the piece
+        ctx.fillStyle = typeof p.hueColor === 'string' ? p.hueColor : '#FFFFFF';
+      } else {
+        ctx.fillStyle = `hsl(${p.hue}, 80%, ${70 - 30*t}%)`;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size*(1-0.5*t), 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Render tile break dissolve animations
+    for(let i=breakTiles.length-1;i>=0;i--){
+      const b = breakTiles[i];
+      b.age += dt;
+      const t = b.age / b.life;
+      if(t >= 1){ breakTiles.splice(i,1); continue; }
+      const alpha = 1 - t;
+      const inset = Math.floor(6 * t);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x + inset, b.y + inset, CELL - inset*2, CELL - inset*2);
+      ctx.restore();
+    }
+
+    // Render floating score labels
+    for(let i=floatScores.length-1;i>=0;i--){
+      const fs = floatScores[i];
+      fs.age += dt;
+      const t = fs.age / fs.life;
+      if(t >= 1){ floatScores.splice(i,1); continue; }
+      const alpha = 1 - t*t*0.9; // ease-out fade
+      const rise = -60 * t; // higher rise, slower animation
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = 'white';
+      ctx.font = `bold ${fs.size}px Inter, Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 6;
+      ctx.fillText(fs.text, fs.x, fs.y + rise);
+      ctx.restore();
+    }
+  }
+
+  function loop(ts){
+    if(!lastTime) lastTime = ts;
+    const delta = ts - lastTime;
+    lastTime = ts;
+    update(delta);
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Color picker UI (bottom-right) to customize palette
+  const colorPane = document.createElement('div');
+  colorPane.id = 'colorPane';
+  colorPane.className = 'color-pane collapsed';
+  colorPane.innerHTML = `
+    <button class="color-toggle" id="colorToggle" aria-expanded="false">🎨 Colors</button>
+    <div class="color-body">
+      <div class="color-grid">
+        <label>1 <input type="color" id="cp0" value="${fullPalette[0]}"></label>
+        <label>2 <input type="color" id="cp1" value="${fullPalette[1]}"></label>
+        <label>3 <input type="color" id="cp2" value="${fullPalette[2]}"></label>
+        <label>4 <input type="color" id="cp3" value="${fullPalette[3]}"></label>
+        <label>5 <input type="color" id="cp4" value="${fullPalette[4]}"></label>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(colorPane);
+
+  function getUnlockedSlots(){
+    if(currentLevel <= 1) return 3;
+    if(currentLevel === 2) return 4;
+    return 5;
+  }
+  function updateColorPickerLock(){
+    const unlocked = getUnlockedSlots();
+    ;['cp0','cp1','cp2','cp3','cp4'].forEach((id, i)=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.disabled = i >= unlocked;
+      // keep input value in sync with palette
+      if(el.value.toUpperCase() !== fullPalette[i].toUpperCase()){
+        el.value = fullPalette[i];
+      }
+    });
+  }
+  function onPick(idx, value){
+    const unlocked = getUnlockedSlots();
+    if(idx >= unlocked) return; // cannot edit locked color
+    const newColor = value.toUpperCase();
+    const oldColor = fullPalette[idx].toUpperCase();
+    if(newColor === oldColor) return;
+    fullPalette[idx] = newColor;
+    // Replace existing grid tiles matching oldColor to newColor
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        if(grid[r][c] && typeof grid[r][c] === 'string' && grid[r][c].toUpperCase() === oldColor){
+          grid[r][c] = newColor;
+        }
+      }
+    }
+    // Update current/next/hold piece colors if they match
+    if(piece && typeof piece.color === 'string' && piece.color.toUpperCase() === oldColor){ piece.color = newColor; }
+    if(nextPieceShape && typeof nextPieceShape.color === 'string' && nextPieceShape.color.toUpperCase() === oldColor){ nextPieceShape.color = newColor; }
+    if(holdPieceShape && typeof holdPieceShape.color === 'string' && holdPieceShape.color.toUpperCase() === oldColor){ holdPieceShape.color = newColor; }
+    currentPalette = paletteForLevel(currentLevel);
+    renderPreviews();
+  }
+  ['cp0','cp1','cp2','cp3','cp4'].forEach((id, i)=>{
+    const el = document.getElementById(id);
+    el.addEventListener('input', (e)=> { onPick(i, e.target.value); renderUnlockPreview(); });
+    el.addEventListener('change', (e)=> { onPick(i, e.target.value); renderUnlockPreview(); });
+  });
+  updateColorPickerLock();
+
+  // Expand/collapse behavior
+  const colorToggleBtn = document.getElementById('colorToggle');
+  function setColorPaneOpen(open){
+    if(open){
+      colorPane.classList.remove('collapsed');
+      colorToggleBtn.setAttribute('aria-expanded','true');
+      colorToggleBtn.textContent = '✕ Close';
+    } else {
+      colorPane.classList.add('collapsed');
+      colorToggleBtn.setAttribute('aria-expanded','false');
+      colorToggleBtn.textContent = '🎨 Colors';
+    }
+  }
+  colorToggleBtn.addEventListener('click', ()=>{
+    setColorPaneOpen(colorPane.classList.contains('collapsed'));
+  });
+
+  // Keyboard input with DAS/ARR
+  const KEY_BIND = { left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', rotate: 'ArrowUp', hard: 'Space', hold: 'KeyC' };
+  const keyState = { left: false, right: false, down: false };
+  const keyTimers = {
+    left: { das: 0, arr: 0 },
+    right: { das: 0, arr: 0 },
+    down: { das: 0, arr: 0 }
+  };
+  const DAS_MS = 160; // initial delay
+  const ARR_MS = 40;  // repeat rate
+  let rotateKeyHeld = false;
+
+  function pressDir(dir){
+    if(gameOver || !piece) return;
+    if(piece.color === 'VOID'){
+      // Free placement: move anywhere on board with keys
+      if(dir === 'left' && piece.x > -3) piece.x -= 1;
+      if(dir === 'right' && piece.x < COLS - 1) piece.x += 1;
+      if(dir === 'down' && piece.y < ROWS - 1) piece.y += 1;
+      if(dir === 'up' && piece.y > -3) piece.y -= 1;
+      return;
+    }
+    if(dir === 'left') tryMovePiece(piece.x - 1, piece.y);
+    if(dir === 'right') tryMovePiece(piece.x + 1, piece.y);
+    if(dir === 'down') tryMovePiece(piece.x, piece.y + 1);
+  }
+
+  function handleKeyboardHold(delta){
+    if(!piece) return;
+    // prioritize one horizontal direction if both held
+    const horiz = keyState.left && keyState.right ? null : (keyState.left ? 'left' : (keyState.right ? 'right' : null));
+    for(const dir of ['left','right','down']){
+      const held = dir === 'left' || dir === 'right' ? (horiz === dir) : keyState.down;
+      if(held){
+        keyTimers[dir].das += delta;
+        if(keyTimers[dir].das >= DAS_MS){
+          keyTimers[dir].arr += delta;
+          while(keyTimers[dir].arr >= ARR_MS){
+            pressDir(dir);
+            keyTimers[dir].arr -= ARR_MS;
+          }
+        }
+      }
+    }
+  }
+
+  window.addEventListener('keydown', e=>{
+    // prevent default scrolling for game keys
+    const blockKeys = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space']);
+    if(blockKeys.has(e.key) || ['KeyW','KeyA','KeyS','KeyD','KeyP'].includes(e.code)){
+      e.preventDefault();
+    }
+    // Avoid Space triggering focused buttons like Restart
+    if(e.code === 'Space'){ const active = document.activeElement; if(active && active.tagName === 'BUTTON'){ active.blur(); } }
+    if(e.key === KEY_BIND.left){ if(!keyState.left) { pressDir('left'); keyTimers.left = {das:0,arr:0}; } keyState.left = true; }
+    if(e.key === KEY_BIND.right){ if(!keyState.right) { pressDir('right'); keyTimers.right = {das:0,arr:0}; } keyState.right = true; }
+    if(e.key === KEY_BIND.down){ if(!keyState.down) { pressDir('down'); keyTimers.down = {das:0,arr:0}; } keyState.down = true; }
+    // WASD support
+    if(e.code === 'KeyA'){ if(!keyState.left) { pressDir('left'); keyTimers.left = {das:0,arr:0}; } keyState.left = true; }
+    if(e.code === 'KeyD'){ if(!keyState.right) { pressDir('right'); keyTimers.right = {das:0,arr:0}; } keyState.right = true; }
+    if(e.code === 'KeyS'){ if(!keyState.down) { pressDir('down'); keyTimers.down = {das:0,arr:0}; } keyState.down = true; }
+    if(e.code === 'KeyW'){ pressDir('up'); if(!gameOver && !rotateKeyHeld && !e.repeat){ rotateKeyHeld = true; tryRotate(); } }
+    if(e.key === 'ArrowUp'){ pressDir('up'); }
+    if(e.key === KEY_BIND.rotate){ if(!gameOver && !rotateKeyHeld && !e.repeat){ rotateKeyHeld = true; tryRotate(); } }
+    if(e.code === 'KeyP'){ showPause(true); }
+     if(e.code === KEY_BIND.hard){
+      if(gameOver) return;
+    if(piece && piece.color === 'VOID'){
+      // Activate void at current location (center of 3x3)
+      const cx = Math.max(0, Math.min(COLS-1, piece.x+1));
+      const cy = Math.max(0, Math.min(ROWS-1, piece.y+1));
+         activateVoidAt(cy, cx);
+         spawnPiece();
+       } else {
+         while(canPlace(piece.mat, piece.x, piece.y + 1)) piece.y++;
+         // arm a short spawn delay to allow visible sand settling
+         delaySpawnOnceMs = 250;
+         settlePieceToGrid();
+       }
+    }
+    // Hold on C or Shift; guard against auto-repeat
+    if(!e.repeat && (e.code === KEY_BIND.hold || e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight')){ holdAction(); }
+    if(e.key.toLowerCase() === 'r'){ restart(); }
+  });
+  window.addEventListener('keyup', e=>{
+    if(e.key === KEY_BIND.left){ keyState.left = false; keyTimers.left = {das:0,arr:0}; }
+    if(e.key === KEY_BIND.right){ keyState.right = false; keyTimers.right = {das:0,arr:0}; }
+    if(e.key === KEY_BIND.down){ keyState.down = false; keyTimers.down = {das:0,arr:0}; }
+    if(e.code === 'KeyA'){ keyState.left = false; keyTimers.left = {das:0,arr:0}; }
+    if(e.code === 'KeyD'){ keyState.right = false; keyTimers.right = {das:0,arr:0}; }
+    if(e.code === 'KeyS'){ keyState.down = false; keyTimers.down = {das:0,arr:0}; }
+    if(e.key === KEY_BIND.rotate){ rotateKeyHeld = false; }
+    if(e.code === 'KeyW'){ rotateKeyHeld = false; }
+  });
+
+  function restart(){
+    // Reset core state
+    resetGrid();
+    particles.length = 0;
+    floatScores.length = 0;
+    breakTiles.length = 0;
+    lastTime = 0;
+    dropTimer = 0;
+    sandAccumulator = 0;
+    sandPauseMs = 0;
+    spawnDelayMs = 0;
+    delaySpawnOnceMs = 0;
+    gameOver = false;
+    // Reset progression/xp and colors
+    xp = 0;
+    xpToLevel = 100;
+    currentLevel = 1;
+    currentPalette = paletteForLevel(currentLevel);
+    // Reset upgrades
+    RAINBOW_CHANCE_UP = 0.0;
+    VOID_CHANCE = 0.0;
+    LARGER_CHANCE = 0.0;
+    hasRainbow = false;
+    hasVoid = false;
+    hasLarger = false;
+    updateXpBar();
+    updateRates && updateRates();
+    updateUpgradeRatesUI && updateUpgradeRatesUI();
+    updateColorPickerLock && updateColorPickerLock();
+    // Reset piece queues
+    holdPieceShape = null;
+    nextPieceShape = null;
+    canHoldThisTurn = true;
+    spawnPiece();
+    // Close overlays
+    showOverlay(false);
+    showUpgrades(false);
+    showUnlock && showUnlock(false);
+    // Refresh previews
+    renderPreviews();
+  }
+  document.getElementById('restart').addEventListener('click', (e)=>{ e.preventDefault(); restart(); });
+  document.getElementById('pauseBtn').addEventListener('click', ()=>{ showPause(true); });
+  document.getElementById('pauseResume').addEventListener('click', ()=>{ showPause(false); });
+  document.getElementById('introStart').addEventListener('click', ()=>{ document.getElementById('introOverlay').classList.add('hidden'); });
+  document.getElementById('btn-restart').addEventListener('click', restart);
+
+  // Remove unused info text
+  const infoEl = { textContent: '' };
+  const xpFillEl = document.getElementById('xpFill');
+  const xpLabelEl = document.getElementById('xpLabel');
+  function activateVoidAt(r, c){
+    // Identify a 5x5 area centered at r,c
+    const targets = [];
+    for(let dr=-2; dr<=2; dr++){
+      for(let dc=-2; dc<=2; dc++){
+        const rr = r+dr, cc = c+dc;
+        if(rr>=0 && rr<ROWS && cc>=0 && cc<COLS && grid[rr][cc]){
+          targets.push({ rr, cc });
+        }
+      }
+    }
+    const centerX = c*CELL + CELL/2;
+    const centerY = r*CELL + CELL/2;
+    // Spawn break animations and remove tiles
+    for(const t of targets){
+      const px = t.cc*CELL + CELL/2;
+      const py = t.rr*CELL + CELL/2;
+      // inward suck streaks
+      const angle = Math.atan2(centerY - py, centerX - px);
+      const speed = 280 + Math.random()*160;
+      particles.push({ kind: 'void', x: px, y: py, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, life: 360, age: 0, size: 2.6 });
+      // radial shard burst
+      const shards = 5 + Math.floor(Math.random()*4);
+      for(let i=0;i<shards;i++){
+        const a = Math.random()*Math.PI*2;
+        const s = 120 + Math.random()*120;
+        particles.push({ kind: 'void', x: px, y: py, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 240, age: 0, size: 1.6 });
+      }
+      // break tile entry for dissolve outline
+      breakTiles.push({ x: t.cc*CELL, y: t.rr*CELL, age: 0, life: 220 });
+      grid[t.rr][t.cc] = null;
+    }
+    sandPauseMs = Math.max(sandPauseMs, 260);
+  }
+  setInterval(() => {
+    let count = 0;
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(grid[r][c]) count++;
+    infoEl.textContent = `Particles: ${count} — Drop speed: ${Math.round(1000/dropInterval)} px/s`;
+  }, 500);
+
+  function updateXpBar(){
+    const pct = Math.max(0, Math.min(100, Math.round((xp / xpToLevel) * 100)));
+    xpFillEl.style.width = pct + '%';
+    xpLabelEl.textContent = `Level ${currentLevel} — ${xp} / ${xpToLevel} XP`;
+  }
+
+  const ratesEl = document.getElementById('rates');
+  function updateRates(){
+    const parts = [];
+    if(hasRainbow) parts.push(`Rainbow: ${(rainbowChance()*100).toFixed(1)}%`);
+    if(hasVoid) parts.push(`Void: ${(VOID_CHANCE*100).toFixed(1)}%`);
+    if(hasLarger) parts.push(`Larger: ${(LARGER_CHANCE*100).toFixed(1)}%`);
+    if(hasDrip) parts.push(`Drip: ${(DRIP_CHANCE*100).toFixed(1)}%`);
+    ratesEl.textContent = parts.length ? `Spawn rates — ${parts.join(' | ')}` : '';
+  }
+  updateRates();
+
+  // Upgrade selection (apply upgrades, show unlock window)
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest && e.target.closest('.choose-upgrade');
+    if(btn){
+      const card = btn.closest('.upgrade-card');
+      const type = card && card.getAttribute('data-upgrade');
+      applyUpgrade(type);
+      showUpgrades(false);
+      // Show unlock window for new color if level increased color count
+      renderUnlockPreview();
+      showUnlock(true);
+    }
+  });
+
+  // Keyboard/gamepad navigation for upgrades: left/right to switch, Enter/Space/A to select
+  function focusUpgradeByOffset(offset){
+    const buttons = Array.from(document.querySelectorAll('#upgradeOverlay .upgrade-card:not(.hidden) .choose-upgrade'));
+    if(buttons.length === 0) return;
+    const idx = buttons.findIndex(b=>b === document.activeElement);
+    const next = idx >= 0 ? (idx + offset + buttons.length) % buttons.length : 0;
+    buttons[next].focus();
+  }
+  document.addEventListener('keydown', (e)=>{
+    const ov = document.getElementById('upgradeOverlay');
+    const visible = ov && !ov.classList.contains('hidden');
+    if(!visible) return;
+    if(['ArrowLeft','KeyA'].includes(e.code)) { e.preventDefault(); focusUpgradeByOffset(-1); }
+    if(['ArrowRight','KeyD'].includes(e.code)) { e.preventDefault(); focusUpgradeByOffset(1); }
+    if(['Enter','Space'].includes(e.code)){
+      e.preventDefault();
+      const btn = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('choose-upgrade') ? document.activeElement : null;
+      if(btn){ btn.click(); }
+    }
+  });
+
+  function applyUpgrade(type){
+    if(type === 'rainbow'){
+      RAINBOW_CHANCE_UP = Math.min(0.25, RAINBOW_CHANCE_UP + 0.05);
+      rainbowSizeBonus = 0.25; // 25% bigger
+      hasRainbow = true;
+    }
+    if(type === 'void'){
+      VOID_CHANCE = Math.min(0.08, VOID_CHANCE + 0.02);
+      hasVoid = true;
+    }
+    if(type === 'larger'){
+      LARGER_CHANCE = Math.min(0.25, LARGER_CHANCE + 0.08);
+      hasLarger = true;
+    }
+    if(type === 'drip'){
+      DRIP_CHANCE = Math.min(0.30, DRIP_CHANCE + 0.10);
+      hasDrip = true;
+    }
+    // Set next level XP target and resume after unlock
+    xpToLevel = Math.min(300, 100 + (currentLevel-1)*50);
+    updateUpgradeRatesUI();
+  }
+
+  function updateUpgradeRatesUI(){
+    const elR = document.getElementById('rateRainbow');
+    const elV = document.getElementById('rateVoid');
+    const elL = document.getElementById('rateLarger');
+    const elD = document.getElementById('rateDrip');
+    if(elR) elR.textContent = `Spawn chance: ${(rainbowChance()*100).toFixed(1)}%`;
+    if(elV) elV.textContent = `Spawn chance: ${(VOID_CHANCE*100).toFixed(1)}%`;
+    if(elL) elL.textContent = `Spawn chance: ${(LARGER_CHANCE*100).toFixed(1)}%`;
+    if(elD) elD.textContent = `Spawn chance: ${(DRIP_CHANCE*100).toFixed(1)}%`;
+    updateRates();
+  }
+
+  function showUnlock(show){
+    const ov = document.getElementById('unlockOverlay');
+    if(show){
+      ov.classList.remove('hidden');
+      // Prepare confetti
+      const canvas = document.getElementById('unlockCanvas');
+      const rectW = canvas.width, rectH = canvas.height;
+      unlockConfetti = Array.from({length: 36}, () => ({
+        x: Math.random()*rectW,
+        y: -10 - Math.random()*30,
+        vx: (Math.random()*2-1) * 0.8,
+        vy: 1.2 + Math.random()*1.2,
+        size: 2 + Math.random()*3,
+        hue: Math.floor(Math.random()*360),
+        life: 120 + Math.random()*80,
+        age: 0
+      }));
+      // Ensure preview reflects latest palette and capture color for confetti tint
+      renderUnlockPreview();
+      currentUnlockColor = getCurrentUnlockColor();
+      // kick off confetti animation loop (separate small loop)
+      if(!unlockConfettiAnim){
+        const step = ()=>{
+          if(ov.classList.contains('hidden')){ unlockConfettiAnim = null; return; }
+          const ctx2 = canvas.getContext('2d');
+          // redraw preview first
+          renderUnlockPreview();
+          // draw confetti over it
+          for(let i=unlockConfetti.length-1;i>=0;i--){
+            const p = unlockConfetti[i];
+            p.age++;
+            p.x += p.vx * 2.0;
+            p.y += p.vy * 2.0;
+            if(p.y > rectH + 10 || p.age > p.life){
+              unlockConfetti.splice(i,1);
+              continue;
+            }
+            ctx2.save();
+            ctx2.globalAlpha = 0.9;
+            ctx2.fillStyle = currentUnlockColor || `hsl(${p.hue}, 85%, 60%)`;
+            ctx2.fillRect(p.x, p.y, p.size, p.size);
+            ctx2.restore();
+          }
+          unlockConfettiAnim = requestAnimationFrame(step);
+        };
+        unlockConfettiAnim = requestAnimationFrame(step);
+      }
+    } else {
+      ov.classList.add('hidden');
+    }
+  }
+  document.getElementById('unlockContinue').addEventListener('click', ()=>{
+    showUnlock(false);
+    updateXpBar();
+    updateRates();
+  });
+
+  // Allow closing unlock window via gamepad A or Enter/Space
+  document.addEventListener('keydown', (e)=>{
+    const ov = document.getElementById('unlockOverlay');
+    const visible = ov && !ov.classList.contains('hidden');
+    if(!visible) return;
+    if(['Enter','Space'].includes(e.code)){
+      e.preventDefault();
+      document.getElementById('unlockContinue').click();
+    }
+  });
+
+  function renderUnlockPreview(){
+    const ctx2 = document.getElementById('unlockCanvas').getContext('2d');
+    ctx2.clearRect(0,0,120,120);
+    const unlockedIdx = Math.max(0, Math.min(fullPalette.length-1, getUnlockedSlots()-1));
+    const color = fullPalette[unlockedIdx];
+    const s = 24; const offX = (120 - 3*s)/2; const offY = (120 - 2*s)/2;
+    ctx2.fillStyle = color;
+    for(let r=0;r<2;r++){
+      for(let c=0;c<3;c++){
+        const x = offX + c*s, y = offY + r*s;
+        ctx2.fillRect(x, y, s-2, s-2);
+        ctx2.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx2.strokeRect(x+0.5, y+0.5, s-3, s-3);
+      }
+    }
+  }
+
+  function getCurrentUnlockColor(){
+    const idx = Math.max(0, Math.min(fullPalette.length-1, getUnlockedSlots()-1));
+    return fullPalette[idx];
+  }
+
+  canvas.addEventListener('dblclick', () => {
+    while(canPlace(piece.mat, piece.x, piece.y + 1)) piece.y++;
+    settlePieceToGrid();
+  });
+
+  // Touch controls
+  function bindHoldButton(id, onPress){
+    const el = document.getElementById(id);
+    const start = (e)=>{ e.preventDefault(); onPress(true); };
+    const end = (e)=>{ e.preventDefault(); onPress(false); };
+    el.addEventListener('pointerdown', start);
+    window.addEventListener('pointerup', end);
+    el.addEventListener('pointerleave', end);
+  }
+  bindHoldButton('btn-left', (pressed)=>{ if(pressed){ pressDir('left'); keyState.left = true; keyTimers.left = {das:0,arr:0}; } else { keyState.left = false; keyTimers.left = {das:0,arr:0}; } });
+  bindHoldButton('btn-right', (pressed)=>{ if(pressed){ pressDir('right'); keyState.right = true; keyTimers.right = {das:0,arr:0}; } else { keyState.right = false; keyTimers.right = {das:0,arr:0}; } });
+  bindHoldButton('btn-down', (pressed)=>{ if(pressed){ pressDir('down'); keyState.down = true; keyTimers.down = {das:0,arr:0}; } else { keyState.down = false; keyTimers.down = {das:0,arr:0}; } });
+  document.getElementById('btn-hold').addEventListener('click', ()=>{ holdAction(); });
+  document.getElementById('btn-rotate').addEventListener('click', ()=>{ if(!gameOver) tryRotate(); });
+   document.getElementById('btn-hard').addEventListener('click', ()=>{
+    if(gameOver) return;
+     if(piece && piece.color === 'VOID'){
+       const cx = Math.max(0, Math.min(COLS-1, piece.x+1));
+       const cy = Math.max(0, Math.min(ROWS-1, piece.y+1));
+       activateVoidAt(cy, cx);
+       spawnPiece();
+     } else {
+       while(canPlace(piece.mat, piece.x, piece.y + 1)) piece.y++;
+       settlePieceToGrid();
+     }
+  });
+
+  // Overlay helpers
+  function showOverlay(show){
+    const ov = document.getElementById('overlay');
+    if(show){ ov.classList.remove('hidden'); } else { ov.classList.add('hidden'); }
+  }
+
+  // Pause overlay helpers
+  function showPause(show){
+    const ov = document.getElementById('pauseOverlay');
+    if(show){ ov.classList.remove('hidden'); } else { ov.classList.add('hidden'); }
+  }
+
+  // Gamepad support
+  let prevButtons = [];
+  function handleGamepadInput(delta){
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = pads && pads[0];
+    if(!gp) return;
+    const btn = (i)=> gp.buttons[i] && gp.buttons[i].pressed;
+    const axisH = gp.axes && gp.axes.length ? gp.axes[0] : 0;
+    const axisV = gp.axes && gp.axes.length > 1 ? gp.axes[1] : 0;
+    // If upgrades overlay visible, navigate cards instead of moving piece
+    const upgradesVisible = !document.getElementById('upgradeOverlay').classList.contains('hidden');
+    if(upgradesVisible){
+      const movedLeft = (btn(14) && !(prevButtons[14])) || axisH < -0.6;
+      const movedRight = (btn(15) && !(prevButtons[15])) || axisH > 0.6;
+      if(movedLeft){ focusUpgradeByOffset(-1); }
+      if(movedRight){ focusUpgradeByOffset(1); }
+      const select = (btn(0) && !(prevButtons[0])) || (btn(9) && !(prevButtons[9]));
+      if(select){
+        const active = document.activeElement;
+        if(active && active.classList && active.classList.contains('choose-upgrade')){ active.click(); }
+      }
+      prevButtons = gp.buttons.map(b=>b.pressed);
+      return; // block gameplay while choosing upgrade
+    }
+    // If unlock overlay visible, allow A/Start to close, block gameplay
+    const unlockVisible = !document.getElementById('unlockOverlay').classList.contains('hidden');
+    if(unlockVisible){
+      const select = (btn(0) && !(prevButtons[0])) || (btn(9) && !(prevButtons[9]));
+      if(select){ document.getElementById('unlockContinue').click(); }
+      prevButtons = gp.buttons.map(b=>b.pressed);
+      return;
+    }
+    // If pause overlay visible, allow A/Start to resume
+    const pauseVisible = !document.getElementById('pauseOverlay').classList.contains('hidden');
+    if(pauseVisible){
+      const select = (btn(0) && !(prevButtons[0])) || (btn(9) && !(prevButtons[9]));
+      if(select){ document.getElementById('pauseResume').click(); }
+      prevButtons = gp.buttons.map(b=>b.pressed);
+      return;
+    }
+    // If intro overlay visible, A/Start should start the game
+    const introVisible = !document.getElementById('introOverlay').classList.contains('hidden');
+    if(introVisible){
+      const select = (btn(0) && !(prevButtons[0])) || (btn(9) && !(prevButtons[9]));
+      if(select){ document.getElementById('introStart').click(); }
+      prevButtons = gp.buttons.map(b=>b.pressed);
+      return;
+    }
+    // Open pause with Start/Options when playing
+    const startEdge = (btn(9) && !prevButtons[9]) || (btn(8) && !prevButtons[8]);
+    if(startEdge){
+      showPause(true);
+      prevButtons = gp.buttons.map(b=>b.pressed);
+      return;
+    }
+    const left = btn(14) || axisH < -0.4;
+    const right = btn(15) || axisH > 0.4;
+    const down = btn(13) || axisV > 0.4;
+
+    // digital shoulder buttons
+    const lb = btn(4); // LB -> Hold
+    const rb = btn(5); // RB -> Hard drop
+
+    // Update hold states similar to keyboard
+    if(left){ if(!keyState.left){ pressDir('left'); keyTimers.left = {das:0,arr:0}; } keyState.left = true; } else { if(keyState.left) { keyState.left = false; keyTimers.left = {das:0,arr:0}; } }
+    if(right){ if(!keyState.right){ pressDir('right'); keyTimers.right = {das:0,arr:0}; } keyState.right = true; } else { if(keyState.right) { keyState.right = false; keyTimers.right = {das:0,arr:0}; } }
+    if(down){ if(!keyState.down){ pressDir('down'); keyTimers.down = {das:0,arr:0}; } keyState.down = true; } else { if(keyState.down) { keyState.down = false; keyTimers.down = {das:0,arr:0}; } }
+
+    // Rotate (A) or D-pad Up for normal pieces; for VOID, Up moves the block upward
+    const aPressedEdge = (btn(0) && !prevButtons[0]);
+    const dpadUpEdge = (btn(12) && !prevButtons[12]);
+    if(!gameOver){
+      if(piece && piece.color === 'VOID'){
+        if(dpadUpEdge || axisV < -0.6){ pressDir('up'); }
+      } else {
+        if(aPressedEdge || dpadUpEdge){ tryRotate(); }
+      }
+    }
+    // Hard drop / Void activation: Y (3), B (1) or RB (5)
+    const yEdge = (btn(3) && !prevButtons[3]);
+    const bEdge = (btn(1) && !prevButtons[1]);
+    const rbEdge = (btn(5) && !prevButtons[5]);
+    if(!gameOver && (yEdge || bEdge || rbEdge)){
+      if(piece && piece.color === 'VOID'){
+        const cx = Math.max(0, Math.min(COLS-1, piece.x+1));
+        const cy = Math.max(0, Math.min(ROWS-1, piece.y+1));
+        activateVoidAt(cy, cx);
+        spawnPiece();
+      } else {
+        while(canPlace(piece.mat, piece.x, piece.y + 1)) piece.y++;
+        settlePieceToGrid();
+      }
+    }
+    // Hold: X (2) or LB (4)
+    const xEdge = (btn(2) && !prevButtons[2]);
+    const lbEdge = (btn(4) && !prevButtons[4]);
+    if(xEdge || lbEdge){
+      holdAction();
+    }
+    prevButtons = gp.buttons.map(b=>b.pressed);
+  }
+})();
+</script>
+</body>
+</html>
