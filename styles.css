@@ -71,13 +71,13 @@ button.ctrl { font-size: 18px; padding: 12px 0; background: linear-gradient(180d
 .sidebar .preview canvas { width: 100%; height: auto; }
 
 /* Overlay */
-.overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(7, 11, 23, 0.55); backdrop-filter: blur(3px); }
+.overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(7, 11, 23, 0.55); backdrop-filter: blur(3px); z-index: 1000; }
 .overlay.hidden { display: none; }
 .upgrade-card.hidden { display: none; }
 /* Unlock preview canvas centering and styling */
 #unlockCanvas { display: block; margin: 10px auto 14px; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; }
 /* Color picker pane */
-.color-pane { position: fixed; right: 14px; bottom: 14px; background: rgba(10,16,32,0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); width: 220px; }
+.color-pane { position: fixed; right: 14px; bottom: 14px; background: rgba(10,16,32,0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); width: 220px; z-index: 10; }
 .color-pane.collapsed .color-body { display: none; }
 .color-toggle { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #e8f0ff; cursor: pointer; }
 .color-grid { display: grid; grid-template-columns: repeat(2, auto); gap: 8px 12px; align-items: center; margin-top: 10px; }
