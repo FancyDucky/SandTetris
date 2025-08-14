@@ -78,6 +78,8 @@
   <div id="overlay" class="overlay hidden">
     <div class="panel">
       <h2>Game Over</h2>
+      <p id="finalScore" class="final-score"></p>
+      <p id="highScore" class="high-score"></p>
       <p>Tap or press Restart to play again.</p>
       <button id="btn-restart" class="primary no-focus" tabindex="-1">Restart</button>
     </div>
@@ -218,7 +220,20 @@
   let nextPieceShape = null;
   let holdPieceShape = null;
   let canHoldThisTurn = true;
-  let score = 0; // deprecated; kept for internal use if needed
+  let score = 0; // total score for current run
+  let highScore = 0; // persisted best score across runs
+  function loadHighScore(){
+    try {
+      const v = localStorage.getItem('sandTetrisHighScore');
+      highScore = v ? Math.max(0, parseInt(v, 10) || 0) : 0;
+    } catch (e) {
+      highScore = 0;
+    }
+  }
+  function saveHighScore(){
+    try { localStorage.setItem('sandTetrisHighScore', String(highScore)); } catch (e) {}
+  }
+  loadHighScore();
   let xp = 0;
   let xpToLevel = 100;
   let isDraining = false;
@@ -268,6 +283,7 @@
     };
     if(!canPlace(piece.mat, piece.x, piece.y)){
       gameOver = true;
+      onGameOver();
       showOverlay(true);
     }
     canHoldThisTurn = true;
@@ -407,6 +423,7 @@
       if(!canPlace(piece.mat, piece.x, piece.y)){
         // if swapped piece cannot spawn, end game
         gameOver = true;
+        onGameOver();
         showOverlay(true);
       }
     }
@@ -687,6 +704,7 @@
           // scoring strictly by pixels removed
           const gained = cells.length;
           addXp(gained);
+          score += gained;
           // floating score text
           spawnFloatingScore(cells, gained);
           anyCleared = true;
@@ -704,7 +722,7 @@
     sx /= cells.length; sy /= cells.length;
     const size = Math.max(16, Math.min(56, 12 + Math.sqrt(gained)*4));
     // longer life for slower, more visible animation
-    floatScores.push({ x: sx, y: sy, text: `+${gained}` , age: 0, life: 1500, size });
+    floatScores.push({ x: sx, y: sy, text: `+${gained}` , age: 0, life: 2200, size });
   }
 
   // XP/Level helpers
@@ -1304,6 +1322,7 @@
     spawnDelayMs = 0;
     delaySpawnOnceMs = 0;
     gameOver = false;
+    score = 0;
     // Reset progression/xp and colors
     xp = 0;
     xpToLevel = 100;
@@ -1595,6 +1614,19 @@
   function showOverlay(show){
     const ov = document.getElementById('overlay');
     if(show){ ov.classList.remove('hidden'); } else { ov.classList.add('hidden'); }
+  }
+
+  function onGameOver(){
+    // update and persist high score
+    if(score > highScore){
+      highScore = score;
+      saveHighScore();
+    }
+    // populate overlay labels
+    const fs = document.getElementById('finalScore');
+    const hs = document.getElementById('highScore');
+    if(fs) fs.textContent = `Score: ${score}`;
+    if(hs) hs.textContent = `High Score: ${highScore}`;
   }
 
   // Pause overlay helpers
