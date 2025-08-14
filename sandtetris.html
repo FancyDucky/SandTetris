@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <title>Sand Tetris</title>
+<meta property="og:title" content="Sand Tetris" />
+<meta name="twitter:title" content="Sand Tetris" />
 <link rel="stylesheet" href="styles.css" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 </head>
@@ -181,6 +183,29 @@
 
 <script>
 (() => {
+  // Mobile fixed layout toggling: add class and CSS vars for stage height
+  const MOBILE_BREAK = 768;
+  function setMobileFixedLayout(){
+    const isMobile = window.innerWidth <= MOBILE_BREAK;
+    const body = document.body;
+    if(isMobile){
+      if(!body.classList.contains('mobile-fixed')) body.classList.add('mobile-fixed');
+      // Compute stage height in CSS var for spacing
+      const canvas = document.getElementById('c');
+      const stageHeight = canvas ? Math.round(canvas.getBoundingClientRect().height) : 560;
+      body.style.setProperty('--stage-h', stageHeight + 'px');
+      // header height known from CSS; expose for overrides if needed
+      const header = document.getElementById('header');
+      const headerH = header ? Math.round(header.getBoundingClientRect().height) : 56;
+      body.style.setProperty('--header-h', headerH + 'px');
+    } else {
+      body.classList.remove('mobile-fixed');
+      body.style.removeProperty('--stage-h');
+      body.style.removeProperty('--header-h');
+    }
+  }
+  window.addEventListener('resize', setMobileFixedLayout);
+  window.addEventListener('orientationchange', setMobileFixedLayout);
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
 
@@ -190,6 +215,7 @@
   const CELL = 20; // pixels per cell
   canvas.width = COLS * CELL;
   canvas.height = ROWS * CELL + 2; // 2px taller
+  setMobileFixedLayout();
 
   // Grid: null or {r,g,b,color}
   let grid = [];
