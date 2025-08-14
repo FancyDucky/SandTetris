@@ -112,3 +112,30 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
 @media (hover: none), (pointer: coarse) {
   #touchControls.controls { display: grid; }
 }
+
+/* Mobile-first optimizations while preserving desktop */
+@media (max-width: 768px) {
+  html, body { overflow: auto; }
+  #container { grid-template-columns: 1fr; gap: 12px; padding: 12px; justify-items: center; }
+  .stage { grid-column: 1; }
+  /* Scale main game canvas to fill width while keeping aspect ratio */
+  .stage canvas { width: min(96vw, 520px); height: auto; }
+  /* Place Hold/Next previews above or below stage compactly */
+  .sidebar { grid-column: 1; justify-self: center; display: grid; grid-auto-flow: column; gap: 10px; width: auto; }
+  .sidebar .preview { width: 120px; }
+  .ui { grid-column: 1; width: 100%; max-width: 520px; align-items: center; text-align: center; justify-self: center; }
+  .ui .subtitle { font-size: 12px; }
+  /* Hide verbose keyboard/gamepad instructions on small screens to save space */
+  .instructions { display: none; }
+  /* Ensure touch controls are visible and fit */
+  #touchControls.controls { display: grid; max-width: 520px; width: 100%; gap: 8px; }
+  button.ctrl { padding: 12px 0; font-size: 18px; }
+  /* Panel width already responsive; tighten paddings a bit */
+  .panel { width: min(94vw, 420px); padding: 18px; }
+}
+
+@media (max-width: 420px) {
+  .sidebar .preview { width: 100px; }
+  .stage canvas { width: 94vw; }
+  #touchControls.controls { gap: 6px; }
+}
