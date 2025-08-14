@@ -194,9 +194,9 @@
       const canvas = document.getElementById('c');
       const stageHeight = canvas ? Math.round(canvas.getBoundingClientRect().height) : 560;
       body.style.setProperty('--stage-h', stageHeight + 'px');
-      // header height known from CSS; expose for overrides if needed
+      // header will scroll; assume initial height for offset
       const header = document.getElementById('header');
-      const headerH = header ? Math.round(header.getBoundingClientRect().height) : 56;
+      const headerH = header ? Math.round(header.offsetHeight || 56) : 56;
       body.style.setProperty('--header-h', headerH + 'px');
     } else {
       body.classList.remove('mobile-fixed');

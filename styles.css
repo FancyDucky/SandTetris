@@ -133,9 +133,10 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
   .panel { width: min(94vw, 420px); padding: 18px; }
 }
 
-/* Mobile fixed header + stage without covering content */
+/* Mobile fixed stage without fixing the header */
 @media (max-width: 768px) {
-  body.mobile-fixed #header { position: fixed; top: 0; left: 0; right: 0; z-index: 5; }
+  /* Ensure header scrolls with the page (override desktop sticky) */
+  #header { position: static; }
   body.mobile-fixed .stage { position: fixed; top: var(--header-h, 56px); left: 50%; transform: translateX(-50%); z-index: 4; }
   body.mobile-fixed .stage canvas { width: min(96vw, 520px); height: auto; }
   body.mobile-fixed #container { padding-top: calc(var(--header-h, 56px) + var(--stage-h, 560px) + 16px); }
