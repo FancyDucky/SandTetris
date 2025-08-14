@@ -15,7 +15,7 @@
     <span class="brand-tetris">
       <span class="l1">T</span><span class="l2">E</span><span class="l3">T</span><span class="l4">R</span><span class="l5">I</span><span class="l6">S</span>
     </span>
-    <span class="version" id="version">v1.0.0</span>
+    <span class="version" id="version">v1.02</span>
   </div>
   <div id="settingsOverlay" class="overlay hidden">
     <div class="panel">
@@ -188,21 +188,16 @@
   function setMobileFixedLayout(){
     const isMobile = window.innerWidth <= MOBILE_BREAK;
     const body = document.body;
-    if(isMobile){
-      if(!body.classList.contains('mobile-fixed')) body.classList.add('mobile-fixed');
-      // Compute stage height in CSS var for spacing
-      const canvas = document.getElementById('c');
-      const stageHeight = canvas ? Math.round(canvas.getBoundingClientRect().height) : 560;
-      body.style.setProperty('--stage-h', stageHeight + 'px');
-      // header will scroll; assume initial height for offset
-      const header = document.getElementById('header');
-      const headerH = header ? Math.round(header.offsetHeight || 56) : 56;
-      body.style.setProperty('--header-h', headerH + 'px');
-    } else {
+    if(!isMobile){
       body.classList.remove('mobile-fixed');
       body.style.removeProperty('--stage-h');
       body.style.removeProperty('--header-h');
+      return;
     }
+    // On mobile: allow natural flow; do not fix stage here anymore
+    body.classList.remove('mobile-fixed');
+    body.style.removeProperty('--stage-h');
+    body.style.removeProperty('--header-h');
   }
   window.addEventListener('resize', setMobileFixedLayout);
   window.addEventListener('orientationchange', setMobileFixedLayout);

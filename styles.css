@@ -116,7 +116,7 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
 @media (max-width: 768px) {
   html, body { overflow: auto; }
   #container { grid-template-columns: 1fr; gap: 12px; padding: 12px; justify-items: center; }
-  .stage { grid-column: 1; }
+  .stage { grid-column: 1; position: sticky; top: 0; z-index: 2; }
   /* Scale main game canvas to fill width while keeping aspect ratio */
   .stage canvas { width: min(96vw, 520px); height: auto; }
   /* Place Hold/Next previews above or below stage compactly */
