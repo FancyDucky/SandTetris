@@ -13,6 +13,20 @@
     <span class="brand-tetris">
       <span class="l1">T</span><span class="l2">E</span><span class="l3">T</span><span class="l4">R</span><span class="l5">I</span><span class="l6">S</span>
     </span>
+    <span class="version" id="version">v1.0.0</span>
+  </div>
+  <div id="settingsOverlay" class="overlay hidden">
+    <div class="panel">
+      <h2>Settings</h2>
+      <div id="settingsColors"></div>
+      <div style="display:grid; gap:8px; margin-top:12px;">
+        <button id="aboutBtn" class="no-focus" tabindex="-1">ℹ️ About</button>
+        <p id="aboutText" style="display:none; margin:0;">FancyDuck is the creator of this game.</p>
+      </div>
+      <div style="margin-top:12px;">
+        <button id="settingsBack" class="primary no-focus" tabindex="-1">← Back</button>
+      </div>
+    </div>
   </div>
   
   </header>
@@ -120,6 +134,9 @@
       <h2>Paused</h2>
       <p>Press P (keyboard) or Start/A (gamepad) to resume.</p>
       <button id="pauseResume" class="primary no-focus" tabindex="-1">Resume</button>
+      <div style="margin-top: 10px;">
+        <button id="openSettings" class="no-focus" tabindex="-1">⚙️ Settings</button>
+      </div>
     </div>
   </div>
   <div id="introOverlay" class="overlay">
@@ -818,8 +835,9 @@
     const upgradesVisible = !document.getElementById('upgradeOverlay').classList.contains('hidden');
     const unlockVisible = !document.getElementById('unlockOverlay').classList.contains('hidden');
     const pauseVisible = !document.getElementById('pauseOverlay').classList.contains('hidden');
+    const settingsVisible = !document.getElementById('settingsOverlay').classList.contains('hidden');
     const introVisible = !document.getElementById('introOverlay').classList.contains('hidden');
-    if(upgradesVisible || unlockVisible || pauseVisible || introVisible) return;
+    if(upgradesVisible || unlockVisible || pauseVisible || settingsVisible || introVisible) return;
     // Handle sand pause during dust animation
     if(sandPauseMs > 0){
       sandPauseMs -= delta;
@@ -1133,23 +1151,14 @@
   }
   requestAnimationFrame(loop);
 
-  // Color picker UI (bottom-right) to customize palette
-  const colorPane = document.createElement('div');
-  colorPane.id = 'colorPane';
-  colorPane.className = 'color-pane collapsed';
-  colorPane.innerHTML = `
-    <button class="color-toggle" id="colorToggle" aria-expanded="false">🎨 Colors</button>
-    <div class="color-body">
-      <div class="color-grid">
-        <label>1 <input type="color" id="cp0" value="${fullPalette[0]}"></label>
-        <label>2 <input type="color" id="cp1" value="${fullPalette[1]}"></label>
-        <label>3 <input type="color" id="cp2" value="${fullPalette[2]}"></label>
-        <label>4 <input type="color" id="cp3" value="${fullPalette[3]}"></label>
-        <label>5 <input type="color" id="cp4" value="${fullPalette[4]}"></label>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(colorPane);
+  // Settings: embed color picker UI inside settings overlay
+  const settingsColors = document.getElementById('settingsColors');
+  function renderSettingsColors(){
+    settingsColors.innerHTML = `
+      <div class=\"color-grid\">\n        <label>1 <input type=\"color\" id=\"cp0\" value=\"${fullPalette[0]}\"></label>\n        <label>2 <input type=\"color\" id=\"cp1\" value=\"${fullPalette[1]}\"></label>\n        <label>3 <input type=\"color\" id=\"cp2\" value=\"${fullPalette[2]}\"></label>\n        <label>4 <input type=\"color\" id=\"cp3\" value=\"${fullPalette[3]}\"></label>\n        <label>5 <input type=\"color\" id=\"cp4\" value=\"${fullPalette[4]}\"></label>\n      </div>
+    `;
+  }
+  renderSettingsColors();
 
   function getUnlockedSlots(){
     if(currentLevel <= 1) return 3;
@@ -1157,20 +1166,21 @@
     return 5;
   }
   function updateColorPickerLock(){
-    const unlocked = getUnlockedSlots();
     ;['cp0','cp1','cp2','cp3','cp4'].forEach((id, i)=>{
       const el = document.getElementById(id);
       if(!el) return;
-      el.disabled = i >= unlocked;
-      // keep input value in sync with palette
+      // Always editable; just keep value in sync with palette
+      el.disabled = false;
+      el.readOnly = false;
+      el.removeAttribute('data-locked');
+      el.style.opacity = '';
+      el.style.cursor = '';
       if(el.value.toUpperCase() !== fullPalette[i].toUpperCase()){
         el.value = fullPalette[i];
       }
     });
   }
   function onPick(idx, value){
-    const unlocked = getUnlockedSlots();
-    if(idx >= unlocked) return; // cannot edit locked color
     const newColor = value.toUpperCase();
     const oldColor = fullPalette[idx].toUpperCase();
     if(newColor === oldColor) return;
@@ -1190,29 +1200,22 @@
     currentPalette = paletteForLevel(currentLevel);
     renderPreviews();
   }
-  ['cp0','cp1','cp2','cp3','cp4'].forEach((id, i)=>{
-    const el = document.getElementById(id);
-    el.addEventListener('input', (e)=> { onPick(i, e.target.value); renderUnlockPreview(); });
-    el.addEventListener('change', (e)=> { onPick(i, e.target.value); renderUnlockPreview(); });
-  });
-  updateColorPickerLock();
-
-  // Expand/collapse behavior
-  const colorToggleBtn = document.getElementById('colorToggle');
-  function setColorPaneOpen(open){
-    if(open){
-      colorPane.classList.remove('collapsed');
-      colorToggleBtn.setAttribute('aria-expanded','true');
-      colorToggleBtn.textContent = '✕ Close';
-    } else {
-      colorPane.classList.add('collapsed');
-      colorToggleBtn.setAttribute('aria-expanded','false');
-      colorToggleBtn.textContent = '🎨 Colors';
-    }
+  function bindColorInputs(){
+    ['cp0','cp1','cp2','cp3','cp4'].forEach((id, i)=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('input', (e)=> { onPick(i, e.target.value); renderUnlockPreview(); });
+      el.addEventListener('change', (e)=> { onPick(i, e.target.value); renderUnlockPreview(); });
+    });
+    updateColorPickerLock();
   }
-  colorToggleBtn.addEventListener('click', ()=>{
-    setColorPaneOpen(colorPane.classList.contains('collapsed'));
-  });
+  bindColorInputs();
+
+  // Settings overlay helpers
+  function showSettings(show){
+    const ov = document.getElementById('settingsOverlay');
+    if(show){ ov.classList.remove('hidden'); } else { ov.classList.add('hidden'); }
+  }
 
   // Keyboard input with DAS/ARR
   const KEY_BIND = { left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', rotate: 'ArrowUp', hard: 'Space', hold: 'KeyC' };
@@ -1354,6 +1357,9 @@
   document.getElementById('restart').addEventListener('click', (e)=>{ e.preventDefault(); restart(); });
   document.getElementById('pauseBtn').addEventListener('click', ()=>{ showPause(true); });
   document.getElementById('pauseResume').addEventListener('click', ()=>{ showPause(false); });
+  document.getElementById('openSettings').addEventListener('click', ()=>{ showPause(false); showSettings(true); });
+  document.getElementById('settingsBack').addEventListener('click', ()=>{ showSettings(false); showPause(true); });
+  document.getElementById('aboutBtn').addEventListener('click', ()=>{ const p = document.getElementById('aboutText'); p.style.display = (p.style.display === 'none' || !p.style.display) ? 'block' : 'none'; });
   document.getElementById('introStart').addEventListener('click', ()=>{ document.getElementById('introOverlay').classList.add('hidden'); });
   document.getElementById('btn-restart').addEventListener('click', restart);
 
@@ -1672,6 +1678,14 @@
     if(pauseVisible){
       const select = (btn(0) && !(prevButtons[0])) || (btn(9) && !(prevButtons[9]));
       if(select){ document.getElementById('pauseResume').click(); }
+      prevButtons = gp.buttons.map(b=>b.pressed);
+      return;
+    }
+    // If settings overlay visible, allow A/Start to go back
+    const settingsVisible = !document.getElementById('settingsOverlay').classList.contains('hidden');
+    if(settingsVisible){
+      const select = (btn(0) && !(prevButtons[0])) || (btn(9) && !(prevButtons[9]));
+      if(select){ document.getElementById('settingsBack').click(); }
       prevButtons = gp.buttons.map(b=>b.pressed);
       return;
     }
