@@ -132,7 +132,7 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
   .sidebar .preview { width: 96px; }
   .preview .label { font-size: 11px; }
   .ui { grid-column: 1; width: 100%; max-width: 520px; align-items: center; text-align: center; justify-self: center; }
-  .ui .subtitle { font-size: 12px; }
+  .ui .subtitle { display: none; }
   /* Hide verbose keyboard/gamepad instructions on small screens to save space */
   .instructions { display: none; }
   /* Ensure touch controls are visible and fit */
