@@ -57,6 +57,14 @@ button:active { transform: translateY(0); }
 button.primary { background: linear-gradient(180deg, #3ad29f, #27b884); color: #041316; border: none; box-shadow: 0 10px 24px rgba(58,210,159,0.35); }
 button.no-focus { outline: none; }
 button.no-focus:focus { outline: none; box-shadow: none; }
+/* Prevent text selection and long-press callouts on button icons (mobile) */
+button, button.ctrl, .key, .brand, .controls button {
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
 
 /* Touch controls */
 .controls { display: none; grid-template-columns: repeat(6, minmax(44px, 1fr)); gap: 10px; margin-top: 10px; width: 100%; max-width: 480px; }
@@ -121,7 +129,8 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
   .stage canvas { width: min(96vw, 520px); height: auto; }
   /* Place Hold/Next previews above or below stage compactly */
   .sidebar { grid-column: 1; justify-self: center; display: grid; grid-auto-flow: column; gap: 10px; width: auto; }
-  .sidebar .preview { width: 120px; }
+  .sidebar .preview { width: 96px; }
+  .preview .label { font-size: 11px; }
   .ui { grid-column: 1; width: 100%; max-width: 520px; align-items: center; text-align: center; justify-self: center; }
   .ui .subtitle { font-size: 12px; }
   /* Hide verbose keyboard/gamepad instructions on small screens to save space */
