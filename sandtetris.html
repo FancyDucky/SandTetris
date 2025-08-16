@@ -15,7 +15,7 @@
     <span class="brand-tetris">
       <span class="l1">T</span><span class="l2">E</span><span class="l3">T</span><span class="l4">R</span><span class="l5">I</span><span class="l6">S</span>
     </span>
-    <span class="version" id="version">v1.06</span>
+    <span class="version" id="version">v1.07</span>
   </div>
   <div id="settingsOverlay" class="overlay hidden">
     <div class="panel">
@@ -1242,11 +1242,12 @@
 
   // Keyboard input with DAS/ARR
   const KEY_BIND = { left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', rotate: 'ArrowUp', hard: 'Space', hold: 'KeyC' };
-  const keyState = { left: false, right: false, down: false };
+  const keyState = { left: false, right: false, down: false, up: false };
   const keyTimers = {
     left: { das: 0, arr: 0 },
     right: { das: 0, arr: 0 },
-    down: { das: 0, arr: 0 }
+    down: { das: 0, arr: 0 },
+    up: { das: 0, arr: 0 }
   };
   const DAS_MS = 160; // initial delay
   const ARR_MS = 40;  // repeat rate
@@ -1271,6 +1272,7 @@
     if(!piece) return;
     // prioritize one horizontal direction if both held
     const horiz = keyState.left && keyState.right ? null : (keyState.left ? 'left' : (keyState.right ? 'right' : null));
+    // process left/right/down repeat
     for(const dir of ['left','right','down']){
       const held = dir === 'left' || dir === 'right' ? (horiz === dir) : keyState.down;
       if(held){
@@ -1281,6 +1283,17 @@
             pressDir(dir);
             keyTimers[dir].arr -= ARR_MS;
           }
+        }
+      }
+    }
+    // process up repeat only for VOID blocks
+    if(keyState.up && piece && piece.color === 'VOID'){
+      keyTimers.up.das += delta;
+      if(keyTimers.up.das >= DAS_MS){
+        keyTimers.up.arr += delta;
+        while(keyTimers.up.arr >= ARR_MS){
+          pressDir('up');
+          keyTimers.up.arr -= ARR_MS;
         }
       }
     }
@@ -1625,12 +1638,14 @@
   bindHoldButton('btn-right', (pressed)=>{ if(pressed){ pressDir('right'); keyState.right = true; keyTimers.right = {das:0,arr:0}; } else { keyState.right = false; keyTimers.right = {das:0,arr:0}; } });
   bindHoldButton('btn-down', (pressed)=>{ if(pressed){ pressDir('down'); keyState.down = true; keyTimers.down = {das:0,arr:0}; } else { keyState.down = false; keyTimers.down = {das:0,arr:0}; } });
   document.getElementById('btn-hold').addEventListener('click', ()=>{ holdAction(); });
-  document.getElementById('btn-rotate').addEventListener('click', ()=>{
+  // Holdable rotate/up touch button
+  bindHoldButton('btn-rotate', (pressed)=>{
     if(gameOver) return;
     if(piece && piece.color === 'VOID'){
-      pressDir('up');
+      if(pressed){ pressDir('up'); keyState.up = true; keyTimers.up = { das: 0, arr: 0 }; }
+      else { keyState.up = false; keyTimers.up = { das: 0, arr: 0 }; }
     } else {
-      tryRotate();
+      if(pressed){ tryRotate(); }
     }
   });
    document.getElementById('btn-hard').addEventListener('click', ()=>{
