@@ -173,3 +173,16 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
 @media (min-width: 900px) {
   #touchControls.controls { grid-column: 2; justify-self: center; }
 }
+
+/* Pseudo-fullscreen fallback for mobile Safari */
+@media (max-width: 768px) {
+  body.pseudo-fs { overflow: hidden; }
+  body.pseudo-fs #header { display: none; }
+  body.pseudo-fs #container { padding: 0; }
+  body.pseudo-fs .sidebar, body.pseudo-fs .instructions { display: none !important; }
+  body.pseudo-fs .stage { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 20; }
+  body.pseudo-fs .stage canvas { width: 100vw; height: auto; }
+  body.pseudo-fs .ui { position: fixed; left: 0; right: 0; bottom: 8px; display: grid; place-items: center; z-index: 21; }
+  body.pseudo-fs .ui .xp, body.pseudo-fs .ui #rates { display: none; }
+  body.pseudo-fs .ui p { display: flex; gap: 10px; }
+}
