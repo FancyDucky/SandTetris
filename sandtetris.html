@@ -15,7 +15,7 @@
     <span class="brand-tetris">
       <span class="l1">T</span><span class="l2">E</span><span class="l3">T</span><span class="l4">R</span><span class="l5">I</span><span class="l6">S</span>
     </span>
-    <span class="version" id="version">v1.09</span>
+    <span class="version" id="version">v1.10</span>
   </div>
   <div id="settingsOverlay" class="overlay hidden">
     <div class="panel">
@@ -1697,10 +1697,7 @@
   (function initFullscreen(){
     const fsBtn = document.getElementById('btn-fullscreen');
     if(!fsBtn) return;
-    if(!fsSupported()){
-      fsBtn.style.display = 'none';
-      return;
-    }
+    // Always show the button; attempt to toggle fullscreen if supported
     fsBtn.addEventListener('click', ()=>{
       if(fsElement()) exitFs(); else requestFs(document.documentElement);
     });

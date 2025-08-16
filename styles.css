@@ -132,6 +132,8 @@ canvas.grid-lines { background-size: 20px 20px; background-image:
   .sidebar .preview { width: 96px; }
   .preview .label { font-size: 11px; }
   .ui { grid-column: 1; width: 100%; max-width: 520px; align-items: center; text-align: center; justify-self: center; }
+  /* Ensure action buttons row (Restart / Pause / Fullscreen) is visible and not wrapped awkwardly */
+  .ui p { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .ui .subtitle { display: none; }
   /* Hide verbose keyboard/gamepad instructions on small screens to save space */
   .instructions { display: none; }
