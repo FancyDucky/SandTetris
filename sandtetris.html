@@ -15,7 +15,7 @@
     <span class="brand-tetris">
       <span class="l1">T</span><span class="l2">E</span><span class="l3">T</span><span class="l4">R</span><span class="l5">I</span><span class="l6">S</span>
     </span>
-    <span class="version" id="version">v1.05</span>
+    <span class="version" id="version">v1.06</span>
   </div>
   <div id="settingsOverlay" class="overlay hidden">
     <div class="panel">
@@ -326,6 +326,7 @@
     }
     canHoldThisTurn = true;
     renderPreviews();
+    updateTouchRotateButton();
   }
   spawnPiece();
 
@@ -467,6 +468,7 @@
     }
     canHoldThisTurn = false;
     renderPreviews();
+    updateTouchRotateButton();
   }
 
   function renderPreviews(){
@@ -1623,7 +1625,14 @@
   bindHoldButton('btn-right', (pressed)=>{ if(pressed){ pressDir('right'); keyState.right = true; keyTimers.right = {das:0,arr:0}; } else { keyState.right = false; keyTimers.right = {das:0,arr:0}; } });
   bindHoldButton('btn-down', (pressed)=>{ if(pressed){ pressDir('down'); keyState.down = true; keyTimers.down = {das:0,arr:0}; } else { keyState.down = false; keyTimers.down = {das:0,arr:0}; } });
   document.getElementById('btn-hold').addEventListener('click', ()=>{ holdAction(); });
-  document.getElementById('btn-rotate').addEventListener('click', ()=>{ if(!gameOver) tryRotate(); });
+  document.getElementById('btn-rotate').addEventListener('click', ()=>{
+    if(gameOver) return;
+    if(piece && piece.color === 'VOID'){
+      pressDir('up');
+    } else {
+      tryRotate();
+    }
+  });
    document.getElementById('btn-hard').addEventListener('click', ()=>{
     if(gameOver) return;
      if(piece && piece.color === 'VOID'){
@@ -1641,6 +1650,19 @@
   function showOverlay(show){
     const ov = document.getElementById('overlay');
     if(show){ ov.classList.remove('hidden'); } else { ov.classList.add('hidden'); }
+  }
+
+  // Touch controls: rotate button becomes Up when holding a VOID block
+  function updateTouchRotateButton(){
+    const btn = document.getElementById('btn-rotate');
+    if(!btn) return;
+    if(piece && piece.color === 'VOID'){
+      btn.textContent = '↑';
+      btn.setAttribute('aria-label','Up');
+    } else {
+      btn.textContent = '⟳';
+      btn.setAttribute('aria-label','Rotate');
+    }
   }
 
   function onGameOver(){
